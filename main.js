@@ -29,5 +29,5 @@ class Emulator {
 
 let emu = new Emulator;
 emu.execute();
-rom = fs.readFileSync("test.rom").toString('hex');
+rom = fs.readFileSync("test.rom");
 console.log(rom);
