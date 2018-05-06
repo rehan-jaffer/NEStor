@@ -9,23 +9,39 @@ class CPU {
     P - Status register, byte-wide */
     this.registers = {PC: 0, S: 0, P:0, A:0, X: 0, Y: 0};
     this.flags = {carry: false, zero: false,
-                  interrupt_disable: true, decimal_mode: false,
-                  break_command: false, overflow: false, negative: false}
+      interrupt_disable: true, decimal_mode: false,
+      break_command: false, overflow: false, negative: false};
     this.interrupt = null;
+    this.running = false;
   }
   load_rom(rom) {
     this.memory.load_rom(rom);
   }
   execute() {
 
-    let opcode = this.memory.fetch(this.registers.PC);
-    switch(opcode) {
+    this.running = true;
+
+    while(this.running == true) {
+
+      let opcode = this.memory.fetch(this.registers.PC);
+      /* replace this with opcode table as soon as it gets unwieldy */
+      switch(opcode) {
       case 0:
+        console.log('NOOP');
+        break;
+      case 0x69:
+        console.log('boop!');
+        break;
       default:
-        console.log("Unimplemented opcode " + opcode);
-      break;
+        console.log('Unimplemented opcode ' + opcode);
+        break;
+      }
+
+      this.registers.PC++;
+
     }
   }
+
   reset() {
     this.memory = new Memory;
     this.registers.S = 0xFD;
@@ -48,6 +64,7 @@ class CPU {
 class Memory {
   constructor() {
     this.ram = Array(0x10000); // use a byte array buffer for this?
+
     // initialize 2KB of Internal RAM
     for(let i=0; i < 0x2000; i++) {
       this.ram[i] = 0xFF;
