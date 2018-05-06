@@ -28,6 +28,7 @@ class ROM {
     let ROM_SIZE = 16384*this.prg_r1_size;
     this.prg_rom = new Buffer(ROM_SIZE);
     this.rom.copy(this.prg_rom, 0, 528, ROM_SIZE);
+    console.log(this.prg_rom);
   }
 
 }

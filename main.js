@@ -9,6 +9,7 @@ class Emulator {
   insert(filename) {
     this.rom = new rom;
     this.rom.load(filename);
+    this.cpu.load_rom(this.rom.prg_rom);
   }
   boot() {
     // initialize states
@@ -17,6 +18,7 @@ class Emulator {
     this.cpu.registers.X = 0;
     this.cpu.registers.Y = 0;
     this.cpu.registers.S = 0xFD;
+    this.cpu.execute();
   }
   execute() {
     let opcode = this.cpu.memory.fetch(this.cpu.registers.PC);

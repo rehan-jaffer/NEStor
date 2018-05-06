@@ -13,6 +13,19 @@ class CPU {
                   break_command: false, overflow: false, negative: false}
     this.interrupt = null;
   }
+  load_rom(rom) {
+    this.memory.load_rom(rom);
+  }
+  execute() {
+
+    let opcode = this.memory.fetch(this.registers.PC);
+    switch(opcode) {
+      case 0:
+      default:
+        console.log("Unimplemented opcode " + opcode);
+      break;
+    }
+  }
   reset() {
     this.memory = new Memory;
     this.registers.S = 0xFD;
@@ -27,6 +40,7 @@ class CPU {
     this.flags.break_Command = false;
     this.flags.overflow = false;
     this.flags.negative = false;
+    this.operations = {};
   }
 
 }
@@ -34,7 +48,6 @@ class CPU {
 class Memory {
   constructor() {
     this.ram = Array(0x10000); // use a byte array buffer for this?
-
     // initialize 2KB of Internal RAM
     for(let i=0; i < 0x2000; i++) {
       this.ram[i] = 0xFF;
@@ -46,8 +59,11 @@ class Memory {
     }
 
   }
-  fetch() {
-
+  load_rom(rom) {
+    this.rom = rom;
+  }
+  fetch(addr) {
+    return this.rom[addr];
   }
 }
 
