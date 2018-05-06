@@ -1,4 +1,5 @@
 var fs = require('fs');
+var rom = require('./iNES.js');
 
 class CPU {
 
@@ -52,16 +53,6 @@ class Memory {
   }
 }
 
-class ROM {
-  constructor(filename) {
-    try {
-      let rom = fs.readFileSync(filename);
-    } catch (e) {
-      console.log("Couldn't open file: " + filename);
-    }
-  }
-}
-
 class Emulator {
   constructor() {
     this.cpu = new CPU;
@@ -82,6 +73,5 @@ class Emulator {
   }
 }
 
-let emu = new Emulator;
-emu.insert("test.rom");
-emu.boot();
+let rom_file = new rom;
+rom_file.load("smb.nes");
