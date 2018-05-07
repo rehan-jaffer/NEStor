@@ -7,13 +7,15 @@ class CPU {
     Y - Index register, byte-wide
     S - Stack pointer, byte-wide
     P - Status register, byte-wide */
-    this.registers = {PC: 0, S: 0, P:0, A:0, X: 0, Y: 0};
+    this.registers = {PC: 0, SP: 0, P:0, A:0, X: 0, Y: 0};
     this.flags = {carry: false, zero: false,
       interrupt_disable: true, decimal_mode: false,
       break_command: false, overflow: false, negative: false};
     this.interrupt = null;
     this.running = false;
+    this.cycles = 0;
   }
+
   load_rom(rom) {
     this.memory.load_rom(rom);
   }
@@ -28,26 +30,33 @@ class CPU {
       switch(opcode) {
       case 0:
         console.log('NOOP');
+        this.flags.break_command = true;
+        this.interrupt = true;
+        this.registers.PC += 2;
+        break;
+      case 1:
+        break;
+      case 8:
         break;
       case 0x69:
         console.log('boop!');
+        this.registers.PC++;
         break;
       default:
         console.log('Unimplemented opcode ' + opcode);
         break;
       }
 
-      this.registers.PC++;
 
     }
   }
 
   reset() {
-    this.memory = new Memory;
     this.registers.S = 0xFD;
     this.registers.A = 0;
     this.registers.X = 0;
     this.registers.Y = 0;
+    this.registers.PC = 0x8000;
 
     this.flags.carry = false;
     this.flags.zero = false;
@@ -56,15 +65,14 @@ class CPU {
     this.flags.break_Command = false;
     this.flags.overflow = false;
     this.flags.negative = false;
-    this.operations = {};
+    this.operations = [];
   }
 
 }
 
 class Memory {
   constructor() {
-    this.ram = Array(0x10000); // use a byte array buffer for this?
-
+    this.ram = Array(65536);
     // initialize 2KB of Internal RAM
     for(let i=0; i < 0x2000; i++) {
       this.ram[i] = 0xFF;
@@ -80,7 +88,33 @@ class Memory {
     this.rom = rom;
   }
   fetch(addr) {
-    return this.rom[addr];
+
+    if(addr > 0 && addr < 0x7FF) {
+      return this.ram[addr];
+      // internal RAM
+    } else if (addr >= 0x800 && addr < 0x0FFF) {
+      // mirror 1
+    } else if (addr >= 0x1000 && addr < 0x17FF) {
+      // mirror 2
+    } else if (addr >= 0x1800 && addr < 0x1FFF) {
+      // mirror 3
+    } else if (addr >= 0x2000 && addr < 0x2007) {
+      // NES PPU registers
+    } else if (addr >= 0x2008 && addr < 0x3FFF) {
+      // Mirrors of $2000-2007
+    } else if (addr >= 0x4000 && addr < 0x4017) {
+      // NES APU and I/O registers
+    } else if (addr >= 0x4018 && addr < 0x401F) {
+      // APU and I/O functionality
+    } else if (addr > 0x4020 && addr < 0xFFFF) {
+      if (addr >= 0x8000 && addr < 0xFFFF) {
+        return this.rom[addr-0x8000];
+      }
+    }
+
+  }
+  store(addr) {
+
   }
 }
 
