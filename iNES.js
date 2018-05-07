@@ -28,12 +28,15 @@ class ROM {
 
   parse() {
     this.nes_str = this.rom.toString('utf-8', 0, 3);
+    if (this.nes_str != "NES") {
+      console.log("Error parsing iNES header");
+      throw err;
+    }
     this.prg_r1_size = this.rom[PRG_ROM_SIZE_INDEX];
     this.chr_size = this.rom[CHR_ROM_SIZE_INDEX];
     const ROM_SIZE = ROM_MULTIPLE_SIZE*this.prg_r1_size;
     this.prg_rom = new Buffer(ROM_SIZE);
     this.rom.copy(this.prg_rom, 0, PRG_ROM_START_INDEX, ROM_SIZE);
-    console.log(this.prg_rom);
   }
 
 }

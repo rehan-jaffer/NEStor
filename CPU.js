@@ -26,6 +26,7 @@ class CPU {
     while(this.running == true) {
 
       let opcode = this.memory.fetch(this.registers.PC);
+      console.log("PC: " + this.registers.PC.toString(16));
       /* replace this with opcode table as soon as it gets unwieldy */
       switch(opcode) {
       case 0:
@@ -37,6 +38,13 @@ class CPU {
       case 1:
         break;
       case 8:
+        break;
+      case 175:
+          console.log("JMP " + (this.memory.fetch(this.registers.PC)).toString(16) + " " + (this.memory.fetch(this.registers.PC+1)).toString(16));
+          let temp = this.memory.fetch(this.registers.PC+2);
+          this.registers.PC = this.memory.fetch(this.registers.PC+2);
+          console.log(temp);
+          process.exit();
         break;
       case 0x69:
         console.log('boop!');
@@ -51,12 +59,24 @@ class CPU {
     }
   }
 
+  get_reset_vector() {
+
+    let reset1 = this.memory.fetch(0xFFFC);
+    let reset2 = this.memory.fetch(0xFFFD);
+    console.log(reset1);
+    console.log(reset2);
+    // process.exit();
+  }
+
   reset() {
+
+    this.get_reset_vector();
+
     this.registers.S = 0xFD;
     this.registers.A = 0;
     this.registers.X = 0;
     this.registers.Y = 0;
-    this.registers.PC = 0x8000;
+    this.registers.PC = 0xC000;
 
     this.flags.carry = false;
     this.flags.zero = false;
@@ -88,7 +108,6 @@ class Memory {
     this.rom = rom;
   }
   fetch(addr) {
-
     if(addr > 0 && addr < 0x7FF) {
       return this.ram[addr];
       // internal RAM

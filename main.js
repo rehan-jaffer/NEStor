@@ -9,7 +9,7 @@ class Emulator {
   insert(filename) {
     this.rom = new rom;
     this.rom.load(filename);
-    this.cpu.load_rom(this.rom.prg_rom);
+    this.cpu.load_rom(this.rom.rom);
   }
   boot() {
     // initialize states
@@ -18,11 +18,8 @@ class Emulator {
     this.cpu.reset();
     this.cpu.execute();
   }
-  execute() {
-    let opcode = this.cpu.memory.fetch(this.cpu.registers.PC);
-  }
 }
 
 let emu = new Emulator;
-emu.insert('smb.nes');
+emu.insert('nestest.nes');
 emu.boot();
