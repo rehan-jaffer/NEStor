@@ -67,7 +67,7 @@ class CPU {
       /* replace this with opcode table as soon as it gets unwieldy */
       switch(opcode) {
       case 0:
-        this.logger.log('NOOP');
+        this.logger.log('NOOP', this.registers.PC);
         this.flags.break_command = true;
         this.interrupt = true;
         this.registers.PC += 2;
@@ -81,7 +81,8 @@ class CPU {
         break;
       case LDX:
           // LDX
-          this.logger.log("LDX")
+          this.logger.log("LDX", this.registers.PC)
+          this.cycles += 3;
           this.registers.PC = this.registers.PC + 2;
         break;
       case JMP:
@@ -89,11 +90,14 @@ class CPU {
           let next_byte2 = this.memory.fetch(this.registers.PC+2);
           let i = merge_bytes(next_byte1, next_byte2);
           this.logger.log("JMP " + i, this.registers.PC);
+          this.cycles += 3;
           this.registers.PC = i;
         break;
       case STX:
-          this.logger.log("STX", this.registers.PC);
-          this.registers.PC++;
+          let addr = this.memory.fetch(this.registers.PC+1);
+          this.memory.set(addr, this.registers.X)
+          this.logger.log("STX " + addr, this.registers.PC);
+          this.registers.PC += 2;
         break;
       default:
         this.logger.log('Unimplemented opcode ' + opcode);
@@ -151,8 +155,13 @@ class Memory {
   load_rom(rom) {
     this.rom = rom;
   }
+  set(loc, value) {
+    if(loc >= 0 && loc < 0x7FF) {
+      this.ram[loc] = value;
+    }  
+  }
   fetch(addr) {
-    if(addr > 0 && addr < 0x7FF) {
+    if(addr >= 0 && addr < 0x7FF) {
       return this.ram[addr];
       // internal RAM
     } else if (addr >= 0x800 && addr < 0x0FFF) {
