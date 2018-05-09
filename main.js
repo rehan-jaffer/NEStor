@@ -9,7 +9,7 @@ class Emulator {
   insert(filename) {
     this.rom = new rom;
     this.rom.load(filename);
-    this.cpu.load_rom(this.rom.rom);
+    this.cpu.load_rom(this.rom.prg_rom);
   }
   boot() {
     // initialize states

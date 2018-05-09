@@ -1,7 +1,7 @@
 var fs = require('fs');
 
 const ROM_MULTIPLE_SIZE = 16384;
-const PRG_ROM_START_INDEX = 528;
+const PRG_ROM_START_INDEX = 16;
 const PRG_ROM_SIZE_INDEX = 4;
 const CHR_ROM_SIZE_INDEX = 5;
 const HEADER_SIZE = 0x10;
