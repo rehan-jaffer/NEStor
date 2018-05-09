@@ -13,9 +13,13 @@ class Logger {
   constructor() {
       this.logging = LOGGING_ENABLED;
   }
-  log(line) {
+  log(line, pc=null) {
     if (this.logging) {
-      console.log(line)
+      if (pc) {
+        console.log(pc.toString(16) + " " + line);
+      } else {
+        console.log(line)
+      }
     }
   }
 }
@@ -37,6 +41,7 @@ class CPU {
     this.running = false;
     this.cycles = 0;
     this.logger = new Logger;
+    this.logger.log("CPU Initialized");
   }
 
   load_rom(rom) {
@@ -53,12 +58,12 @@ class CPU {
 
   execute() {
 
+    this.logger.log("Beginning execution at " + this.registers.PC);
     this.running = true;
 
     while(this.running == true) {
 
       let opcode = this.memory.fetch(this.registers.PC);
-      this.logger.log("PC: " + this.registers.PC.toString(16));
       /* replace this with opcode table as soon as it gets unwieldy */
       switch(opcode) {
       case 0:
@@ -83,11 +88,11 @@ class CPU {
           let next_byte1 = this.memory.fetch(this.registers.PC+1);
           let next_byte2 = this.memory.fetch(this.registers.PC+2);
           let i = merge_bytes(next_byte1, next_byte2);
-          this.logger.log("JMP " + i);
+          this.logger.log("JMP " + i, this.registers.PC);
           this.registers.PC = i;
         break;
       case STX:
-          this.logger.log("STX");
+          this.logger.log("STX", this.registers.PC);
           this.registers.PC++;
         break;
       default:
