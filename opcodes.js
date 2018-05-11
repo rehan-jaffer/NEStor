@@ -7,6 +7,8 @@ const CLC = 0x18;
 const BCC = 0x90;
 const LDA_ZP = 0xA9;
 const BEQ = 0xF0;
+const BNE = 0xD0;
+const STA_ZP = 0x85;
 
-module.exports = {LDX, JMP, STX, SEC, BCS, CLC, BCC, LDA_ZP, BEQ}
+module.exports = {LDX, JMP, STX, SEC, BCS, CLC, BCC, LDA_ZP, BEQ, BNE, STA_ZP}
 

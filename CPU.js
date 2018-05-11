@@ -164,6 +164,20 @@ class CPU {
             this.registers.PC += 2;
           }
       break;
+      case ops.BNE:
+          this.logger.log("BNE " + (this.next_byte() + this.registers.PC + 2).toString(16), this.registers.PC);
+          if (this.flags.zero == false) {
+            this.registers.PC += 2 + this.next_byte();
+          } else {
+            this.registers.PC += 2;
+          }
+      break;
+      case ops.STA_ZP:
+          this.logger.log("STA #" + this.next_byte(), this.registers.PC)
+          this.cycles += 3;
+          this.memory.set(this.next_byte(), this.registers.A);
+          this.registers.PC = this.registers.PC+2;
+      break;
       default:
         this.logger.log('Unimplemented opcode ' + opcode.toString(16) + " at " + this.registers.PC);
         process.exit();
@@ -223,7 +237,7 @@ class Memory {
   set(loc, value) {
     if(loc >= 0 && loc < 0x7FF) {
       this.ram[loc] = value;
-    }  
+    }
   }
   fetch(addr) {
     if(addr >= 0 && addr < 0x7FF) {
