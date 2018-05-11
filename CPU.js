@@ -1,15 +1,11 @@
+var ops = require('./opcodes.js');
+
 function merge_bytes(b1, b2) {
   return parseInt(b2.toString(16) + b1.toString(16), 16);
 }
 
 
 const LOGGING_ENABLED = true;
-
-const LDX = 0xA2;
-const JMP = 0x4C;
-const STX = 0x86;
-const SEC = 0x38;
-const BCS = 0xB0;
 
 class Logger {
   constructor() {
@@ -104,42 +100,58 @@ class CPU {
         this.logger.log("JSR " + j, this.registers.PC);
         this.registers.PC = j;
         break;
-      case LDX:
+      case ops.LDX:
           // LDX
           this.logger.log("LDX", this.registers.PC)
           this.cycles += 3;
           this.registers.X = this.registers.PC+1;
           this.registers.PC = this.registers.PC + 2;
         break;
-      case JMP:
+      case ops.JMP:
           let next_byte1 = this.memory.fetch(this.registers.PC+1);
           let next_byte2 = this.memory.fetch(this.registers.PC+2);
           let i = merge_bytes(next_byte1, next_byte2);
-          this.logger.log("JMP " + i, this.registers.PC);
+          this.logger.log("JMP " + i.toString(16), this.registers.PC);
           this.cycles += 3;
           this.registers.PC = i;
         break;
-      case STX:
+      case ops.STX:
           let addr = this.memory.fetch(this.registers.PC+1);
           this.memory.set(addr, this.registers.X)
           this.logger.log("STX " + addr, this.registers.PC);
           this.registers.PC += 2;
         break;
-      case SEC:
+      case ops.SEC:
           this.logger.log("SEC", this.registers.PC);
           this.flags.carry = true;
           this.registers.PC++;
         break;
-      case BCS:
+      case ops.BCS:
           let bcs_addr = this.registers.PC+2 + this.next_byte();
-          this.logger.log("BCS " + (this.next_byte()+this.registers.PC).toString(16), this.registers.PC);
+          this.logger.log("BCS " + (this.next_byte()+this.registers.PC+2).toString(16), this.registers.PC);
           this.registers.PC += 2;
           if (this.flags.carry == true) {
             this.registers.PC = bcs_addr;
           }
         break;
+      case ops.CLC:
+          this.logger.log("CLC", this.registers.PC);
+          this.flags.carry = false;
+          this.registers.PC++;
+      break;
+      case ops.BCC:
+          let bcc_addr = this.registers.PC+2 + this.next_byte();
+          this.logger.log("BCC " + (this.next_byte()+this.registers.PC+2).toString(16), this.registers.PC);
+          this.registers.PC += 2;
+          if (this.flags.carry == false) {
+            this.registers.PC = bcc_addr;
+          }
+      break;
+      case ops.LDA_ZP:
+        
+      break;
       default:
-        this.logger.log('Unimplemented opcode ' + opcode + " at " + this.registers.PC);
+        this.logger.log('Unimplemented opcode ' + opcode.toString(16) + " at " + this.registers.PC);
         process.exit();
         break;
       }
