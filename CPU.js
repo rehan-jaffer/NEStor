@@ -8,7 +8,6 @@ const LOGGING_ENABLED = true;
 const LDX = 0xA2;
 const JMP = 0x4C;
 const STX = 0x86;
-const BCS = 0xB0;
 const SEC = 0x38;
 const BCS = 0xB0;
 
@@ -58,6 +57,18 @@ class CPU {
       console.log((addr + x).toString(16) + ": " + this.memory.fetch((addr+x)).toString(16));
     }
 
+  }
+
+  next_byte() {
+    let nb1 = this.memory.fetch(this.registers.PC+1);
+    return nb1;
+  }
+
+  next_bytes() {
+    let nb1 = this.memory.fetch(this.registers.PC+1);
+    let nb2 = this.memory.fetch(this.registers.PC+2);
+    let j = merge_bytes(nb1, nb2);
+    return j
   }
 
   execute() {
@@ -118,6 +129,14 @@ class CPU {
           this.logger.log("SEC", this.registers.PC);
           this.flags.carry = true;
           this.registers.PC++;
+        break;
+      case BCS:
+          let bcs_addr = this.registers.PC+2 + this.next_byte();
+          this.logger.log("BCS " + (this.next_byte()+this.registers.PC).toString(16), this.registers.PC);
+          this.registers.PC += 2;
+          if (this.flags.carry == true) {
+            this.registers.PC = bcs_addr;
+          }
         break;
       default:
         this.logger.log('Unimplemented opcode ' + opcode + " at " + this.registers.PC);
