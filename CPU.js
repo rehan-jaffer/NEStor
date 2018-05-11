@@ -131,6 +131,7 @@ class CPU {
           this.logger.log("BCS " + (this.next_byte()+this.registers.PC+2).toString(16), this.registers.PC);
           this.registers.PC += 2;
           if (this.flags.carry == true) {
+            this.logger.log("Branch taken", bcs_addr);
             this.registers.PC = bcs_addr;
           }
         break;
@@ -144,13 +145,14 @@ class CPU {
           this.logger.log("BCC " + (this.next_byte()+this.registers.PC+2).toString(16), this.registers.PC);
           this.registers.PC += 2;
           if (this.flags.carry == false) {
+            this.logger.log("Branch taken", bcc_addr);
             this.registers.PC = bcc_addr;
           }
       break;
       case ops.LDA_ZP:
           this.logger.log("LDA #" + this.next_byte(), this.registers.PC)
           this.cycles += 3;
-          this.registers.A = this.registers.PC+1;
+          this.registers.A = this.memory.fetch(this.registers.PC+1);
           this.registers.PC = this.registers.PC+2;
           if (this.registers.A == 0) {
             this.flags.zero = true;
@@ -159,6 +161,7 @@ class CPU {
       case ops.BEQ:
           this.logger.log("BEQ " + (this.next_byte() + this.registers.PC + 2).toString(16), this.registers.PC);
           if (this.flags.zero == true) {
+//            this.logger.log("Branch taken", bvs_addr);
             this.registers.PC += 2 + this.next_byte();
           } else {
             this.registers.PC += 2;
@@ -167,6 +170,7 @@ class CPU {
       case ops.BNE:
           this.logger.log("BNE " + (this.next_byte() + this.registers.PC + 2).toString(16), this.registers.PC);
           if (this.flags.zero == false) {
+//            this.logger.log("Branch taken", bvs_addr);
             this.registers.PC += 2 + this.next_byte();
           } else {
             this.registers.PC += 2;
@@ -177,6 +181,42 @@ class CPU {
           this.cycles += 3;
           this.memory.set(this.next_byte(), this.registers.A);
           this.registers.PC = this.registers.PC+2;
+      break;
+      case ops.BIT:
+          this.logger.log("BIT #" + this.next_byte(), this.registers.PC)
+          let mem = this.next_byte();
+          let r = (this.registers.A & mem).toString(2);
+          let s = ("00000000" + r).substr(-8)
+          this.flags.negative = !!s[7];
+          this.flags.overflow = !!s[6];
+          this.registers.PC += 2;
+      break;
+      case ops.BVS:
+          let bvs_addr = this.registers.PC+2 + this.next_byte();
+          this.logger.log("BVS " + (this.next_byte()+this.registers.PC+2).toString(16), this.registers.PC);
+          this.registers.PC += 2;
+          if (this.flags.overflow == true) {
+            this.logger.log("Branch taken", bvs_addr);
+            this.registers.PC = bvs_addr;
+          }
+      break;
+      case ops.BVC:
+          let bvc_addr = this.registers.PC+2 + this.next_byte();
+          this.logger.log("BVC " + (this.next_byte()+this.registers.PC+2).toString(16), this.registers.PC);
+          this.registers.PC += 2;
+          if (this.flags.overflow == false) {
+            this.logger.log("Branch taken", bvc_addr);
+            this.registers.PC = bvc_addr;
+          }
+      break;
+      case ops.BPL:
+          let bpl_addr = this.registers.PC+2 + this.next_byte();
+          this.logger.log("BPL " + (this.next_byte()+this.registers.PC+2).toString(16), this.registers.PC);
+          this.registers.PC += 2;
+          if (this.flags.negative == false) {
+            this.logger.log("Branch taken", bpl_addr);
+            this.registers.PC = bpl_addr;
+          }
       break;
       default:
         this.logger.log('Unimplemented opcode ' + opcode.toString(16) + " at " + this.registers.PC);

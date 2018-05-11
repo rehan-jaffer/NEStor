@@ -9,6 +9,10 @@ const LDA_ZP = 0xA9;
 const BEQ = 0xF0;
 const BNE = 0xD0;
 const STA_ZP = 0x85;
+const BIT = 0x24;
+const BVS = 0x70;
+const BVC = 0x50;
+const BPL = 0x10;
 
-module.exports = {LDX, JMP, STX, SEC, BCS, CLC, BCC, LDA_ZP, BEQ, BNE, STA_ZP}
+module.exports = {LDX, JMP, STX, SEC, BCS, CLC, BCC, LDA_ZP, BEQ, BNE, STA_ZP, BIT, BVS, BVC, BPL}
 
