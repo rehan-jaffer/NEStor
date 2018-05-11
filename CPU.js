@@ -41,6 +41,7 @@ class CPU {
     this.running = false;
     this.cycles = 0;
     this.logger = new Logger;
+    this.stack = new Array;
     this.logger.log("CPU Initialized");
   }
 
@@ -66,7 +67,7 @@ class CPU {
       let opcode = this.memory.fetch(this.registers.PC);
       /* replace this with opcode table as soon as it gets unwieldy */
       switch(opcode) {
-      case 0:
+      case 234:
         this.logger.log('NOOP', this.registers.PC);
         this.flags.break_command = true;
         this.interrupt = true;
@@ -80,7 +81,14 @@ class CPU {
           this.dump_bytes(this.registers.PC, 5);
         break;
       case 0x20:
-        this.logger.log("JSR", this.registers.PC);
+        // push address of next operation onto the stack
+        this.stack.push(this.registers.PC+2);
+        // then jump to subroutine location
+          let nb1 = this.memory.fetch(this.registers.PC+1);
+          let nb2 = this.memory.fetch(this.registers.PC+2);
+          let j = merge_bytes(nb1, nb2);
+        this.logger.log("JSR " + j, this.registers.PC);
+        this.registers.PC = j;
         break;
       case LDX:
           // LDX
@@ -104,7 +112,7 @@ class CPU {
           this.registers.PC += 2;
         break;
       default:
-        this.logger.log('Unimplemented opcode ' + opcode);
+        this.logger.log('Unimplemented opcode ' + opcode + " at " + this.registers.PC);
         process.exit();
         break;
       }
