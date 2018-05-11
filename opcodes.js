@@ -6,6 +6,7 @@ const BCS = 0xB0;
 const CLC = 0x18;
 const BCC = 0x90;
 const LDA_ZP = 0xA9;
+const BEQ = 0xF0;
 
-module.exports = {LDX, JMP, STX, SEC, BCS, CLC, BCC, LDA_ZP}
+module.exports = {LDX, JMP, STX, SEC, BCS, CLC, BCC, LDA_ZP, BEQ}
 

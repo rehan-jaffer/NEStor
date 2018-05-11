@@ -105,7 +105,7 @@ class CPU {
           this.logger.log("LDX", this.registers.PC)
           this.cycles += 3;
           this.registers.X = this.registers.PC+1;
-          this.registers.PC = this.registers.PC + 2;
+          this.registers.PC = this.registers.PC+2;
         break;
       case ops.JMP:
           let next_byte1 = this.memory.fetch(this.registers.PC+1);
@@ -148,7 +148,21 @@ class CPU {
           }
       break;
       case ops.LDA_ZP:
-        
+          this.logger.log("LDA #" + this.next_byte(), this.registers.PC)
+          this.cycles += 3;
+          this.registers.A = this.registers.PC+1;
+          this.registers.PC = this.registers.PC+2;
+          if (this.registers.A == 0) {
+            this.flags.zero = true;
+          }
+      break;
+      case ops.BEQ:
+          this.logger.log("BEQ " + (this.next_byte() + this.registers.PC + 2).toString(16), this.registers.PC);
+          if (this.flags.zero == true) {
+            this.registers.PC += 2 + this.next_byte();
+          } else {
+            this.registers.PC += 2;
+          }
       break;
       default:
         this.logger.log('Unimplemented opcode ' + opcode.toString(16) + " at " + this.registers.PC);
