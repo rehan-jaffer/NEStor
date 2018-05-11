@@ -8,6 +8,9 @@ const LOGGING_ENABLED = true;
 const LDX = 0xA2;
 const JMP = 0x4C;
 const STX = 0x86;
+const BCS = 0xB0;
+const SEC = 0x38;
+const BCS = 0xB0;
 
 class Logger {
   constructor() {
@@ -71,7 +74,7 @@ class CPU {
         this.logger.log('NOOP', this.registers.PC);
         this.flags.break_command = true;
         this.interrupt = true;
-        this.registers.PC += 2;
+        this.registers.PC += 1;
         break;
       case 1:
         break;
@@ -110,6 +113,11 @@ class CPU {
           this.memory.set(addr, this.registers.X)
           this.logger.log("STX " + addr, this.registers.PC);
           this.registers.PC += 2;
+        break;
+      case SEC:
+          this.logger.log("SEC", this.registers.PC);
+          this.flags.carry = true;
+          this.registers.PC++;
         break;
       default:
         this.logger.log('Unimplemented opcode ' + opcode + " at " + this.registers.PC);
