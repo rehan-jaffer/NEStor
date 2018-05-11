@@ -79,10 +79,14 @@ class CPU {
       case 165:
           this.dump_bytes(this.registers.PC, 5);
         break;
+      case 0x20:
+        this.logger.log("JSR", this.registers.PC);
+        break;
       case LDX:
           // LDX
           this.logger.log("LDX", this.registers.PC)
           this.cycles += 3;
+          this.registers.X = this.registers.PC+1;
           this.registers.PC = this.registers.PC + 2;
         break;
       case JMP:
@@ -163,13 +167,12 @@ class Memory {
   fetch(addr) {
     if(addr >= 0 && addr < 0x7FF) {
       return this.ram[addr];
-      // internal RAM
     } else if (addr >= 0x800 && addr < 0x0FFF) {
-      // mirror 1
+      return this.ram[addr-0x800];
     } else if (addr >= 0x1000 && addr < 0x17FF) {
-      // mirror 2
+      return this.ram[addr-0x1000];
     } else if (addr >= 0x1800 && addr < 0x1FFF) {
-      // mirror 3
+      return this.ram[addr-0x1800];
     } else if (addr >= 0x2000 && addr < 0x2007) {
       // NES PPU registers
     } else if (addr >= 0x2008 && addr < 0x3FFF) {
