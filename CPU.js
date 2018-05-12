@@ -85,14 +85,13 @@ class CPU {
         break;
       case 1:
         break;
-      case 8:
-        break;
       case 165:
           this.dump_bytes(this.registers.PC, 5);
         break;
       case 0x20:
         // push address of next operation onto the stack
-        this.stack.push(this.registers.PC+2);
+        this.stack.push(this.registers.PC+3);
+        console.log(this.stack);
         // then jump to subroutine location
           let nb1 = this.memory.fetch(this.registers.PC+1);
           let nb2 = this.memory.fetch(this.registers.PC+2);
@@ -218,13 +217,44 @@ class CPU {
             this.registers.PC = bpl_addr;
           }
       break;
+      case ops.RTS:
+         let ret_addr = this.stack.pop()
+         this.logger.log("RTS " + ret_addr.toString(16), this.registers.PC)
+         this.registers.PC = ret_addr;
+      break;
+      case ops.SEI:
+        this.interrupt = true;
+        this.logger.log("SEI", this.registers.PC);
+        this.registers.PC++;
+      break;
+      case ops.SED:
+        this.flags.decimal = true;
+        this.logger.log("SED", this.registers.PC);
+        this.registers.PC++;
+      break;
+      case ops.PHP:
+        this.logger.log("PHP", this.registers.PC);
+        this.registers.PC++;
+        this.stack.push(this.status_byte());
+      break;
+      case ops.PLA:
+        let byte = this.stack.pop();
+        this.logger.log("PLA", this.registers.PC);
+        this.registers.A = byte;
+        if (this.registers.A == 0) {
+          this.flags.zero = true;
+        }
+        if (byte[7] == "1") {
+          this.flags.negative = true;
+        }
+        this.registers.PC++;
+      break;
       default:
-        this.logger.log('Unimplemented opcode ' + ops.op_table[opcode] + " at " + this.registers.PC);
+        this.logger.log('Unimplemented opcode ' + ops.op_table[opcode] + " at " + this.registers.PC.toString(16));
         process.exit();
         break;
       }
-
-
+      
     }
   }
 
@@ -233,6 +263,21 @@ class CPU {
     let reset1 = this.memory.fetch(0xFFFC);
     let reset2 = this.memory.fetch(0xFFFD);
     // process.exit();
+  }
+
+  status_byte() {
+
+    let status = new Array;
+    status.push(this.flags.carry)
+    status.push(this.flags.zero)
+    status.push(this.interrupt)
+    status.push(this.flags.decimal)
+    status.push(this.flags.break_command)
+    status.push(true)
+    status.push(this.flags.overflow)
+    status.push(this.flags.negative)
+    let byte = parseInt(status.map((s) => + s).join(''), 2);
+    return byte;
   }
 
   reset() {
