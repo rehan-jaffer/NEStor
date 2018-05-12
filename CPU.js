@@ -1,7 +1,7 @@
 var ops = require('./opcodes.js');
 
 function merge_bytes(b1, b2) {
-  return parseInt(b2.toString(16) + b1.toString(16), 16);
+  return parseInt(("00" + b2.toString(16)).substr(-2) + ("00" + b1.toString(16)).substr(-2), 16);
 }
 
 
@@ -157,7 +157,6 @@ class CPU {
         this.logger.log("PLP", this.registers.PC);
         let pflags = this.stack.pop();
         let t = ("00000000" + pflags.toString(2)).substr(-8)
-        console.log(t);
         this.flags.carry = ! t[0];
         this.flags.zero = ! t[1];
         this.interrupt = ! t[2];
@@ -301,7 +300,6 @@ class CPU {
       break;
       case ops.BMI:
         this.logger.log("BMI " + this.next_byte(), this.registers.PC);
-        console.log(this.flags);
         if (this.flags.negative == true) {
           this.registers.PC += this.next_byte() + 2;
         } else {
