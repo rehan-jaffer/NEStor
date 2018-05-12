@@ -131,7 +131,7 @@ class CPU {
           this.logger.log("BCS " + (this.next_byte()+this.registers.PC+2).toString(16), this.registers.PC);
           this.registers.PC += 2;
           if (this.flags.carry == true) {
-            this.logger.log("Branch taken", bcs_addr);
+            this.logger.log("- Branch taken", bcs_addr);
             this.registers.PC = bcs_addr;
           }
         break;
@@ -145,7 +145,7 @@ class CPU {
           this.logger.log("BCC " + (this.next_byte()+this.registers.PC+2).toString(16), this.registers.PC);
           this.registers.PC += 2;
           if (this.flags.carry == false) {
-            this.logger.log("Branch taken", bcc_addr);
+            this.logger.log("- Branch taken", bcc_addr);
             this.registers.PC = bcc_addr;
           }
       break;
@@ -196,7 +196,7 @@ class CPU {
           this.logger.log("BVS " + (this.next_byte()+this.registers.PC+2).toString(16), this.registers.PC);
           this.registers.PC += 2;
           if (this.flags.overflow == true) {
-            this.logger.log("Branch taken", bvs_addr);
+            this.logger.log("- Branch taken", bvs_addr);
             this.registers.PC = bvs_addr;
           }
       break;
@@ -205,7 +205,7 @@ class CPU {
           this.logger.log("BVC " + (this.next_byte()+this.registers.PC+2).toString(16), this.registers.PC);
           this.registers.PC += 2;
           if (this.flags.overflow == false) {
-            this.logger.log("Branch taken", bvc_addr);
+            this.logger.log("- Branch taken", bvc_addr);
             this.registers.PC = bvc_addr;
           }
       break;
@@ -214,12 +214,12 @@ class CPU {
           this.logger.log("BPL " + (this.next_byte()+this.registers.PC+2).toString(16), this.registers.PC);
           this.registers.PC += 2;
           if (this.flags.negative == false) {
-            this.logger.log("Branch taken", bpl_addr);
+            this.logger.log("- Branch taken", bpl_addr);
             this.registers.PC = bpl_addr;
           }
       break;
       default:
-        this.logger.log('Unimplemented opcode ' + opcode.toString(16) + " at " + this.registers.PC);
+        this.logger.log('Unimplemented opcode ' + ops.op_table[opcode] + " at " + this.registers.PC);
         process.exit();
         break;
       }
