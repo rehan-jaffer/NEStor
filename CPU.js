@@ -91,7 +91,6 @@ class CPU {
       case 0x20:
         // push address of next operation onto the stack
         this.stack.push(this.registers.PC+3);
-        console.log(this.stack);
         // then jump to subroutine location
           let nb1 = this.memory.fetch(this.registers.PC+1);
           let nb2 = this.memory.fetch(this.registers.PC+2);
@@ -138,6 +137,35 @@ class CPU {
           this.logger.log("CLC", this.registers.PC);
           this.flags.carry = false;
           this.registers.PC++;
+      break;
+      case ops.CLD:
+          this.logger.log("CLD", this.registers.PC);
+          this.flags.decimal = false;
+          this.registers.PC++;
+      break;
+      case ops.CLV:
+          this.logger.log("CLD", this.registers.PC);
+          this.flags.overflow = false;
+          this.registers.PC++;
+      break;
+      case ops.PHA:
+        this.logger.log("PHA", this.registers.PC);
+        this.stack.push(this.registers.A)
+        this.registers.PC++;
+      break;
+      case ops.PLP:
+        this.logger.log("PLP", this.registers.PC);
+        let pflags = this.stack.pop();
+        let t = ("00000000" + pflags.toString(2)).substr(-8)
+        console.log(t);
+        this.flags.carry = ! t[0];
+        this.flags.zero = ! t[1];
+        this.interrupt = ! t[2];
+        this.flags.decimal = ! t[3];
+        this.flags.break_command = ! t[4];
+        this.flags.overflow = ! t[6];
+        this.flags.negative = ! t[7];
+        this.registers.PC++;
       break;
       case ops.BCC:
           let bcc_addr = this.registers.PC+2 + this.next_byte();
@@ -248,6 +276,57 @@ class CPU {
           this.flags.negative = true;
         }
         this.registers.PC++;
+      break;
+      case ops.AND_IMM:
+        this.registers.A = this.registers.A & this.next_byte();
+        this.logger.log("AND #" + this.next_byte(), this.registers.PC);
+        if (this.registers.A == 0) {
+          this.flags.zero = true;
+        }
+        if (this.registers.A.toString(2)[7] == 1) {
+          this.flags.negative = true;
+        }
+        this.registers.PC += 2;
+      break;
+      case ops.CMP_IMM:
+        this.logger.log("CMP #" + this.next_byte(), this.registers.PC);
+        if (this.registers.A >= this.next_byte()) {
+          this.flags.carry = true;
+        } else if (this.registers.A == this.flags.zero) {
+          this.flags.zero = true;
+        } else if ((this.registers.A).toString(2)[7] == 1) {
+          this.flags.negative = true;
+        }
+        this.registers.PC += 2;
+      break;
+      case ops.BMI:
+        this.logger.log("BMI " + this.next_byte(), this.registers.PC);
+        console.log(this.flags);
+        if (this.flags.negative == true) {
+          this.registers.PC += this.next_byte() + 2;
+        } else {
+          this.registers.PC += 2;
+        }
+      break;
+      case ops.ORA_IMM:
+        this.registers.A = this.registers.A | this.next_byte();
+        if (this.registers.A == 0) {
+          this.flags.zero = true;
+        }
+        if (this.registers.A.toString(2)[7] == 1) {
+          this.flags.negative = true;
+        }
+        this.registers.PC += 2;
+      break;
+      case ops.EOR_IMM:
+        this.registers.A = this.registers.A ^ this.next_byte();
+        if (this.registers.A == 0) {
+          this.flags.zero = true;
+        }
+        if (this.registers.A.toString(2)[7] == 1) {
+          this.flags.negative = true;
+        }
+        this.registers.PC += 2;
       break;
       default:
         this.logger.log('Unimplemented opcode ' + ops.op_table[opcode] + " at " + this.registers.PC.toString(16));
