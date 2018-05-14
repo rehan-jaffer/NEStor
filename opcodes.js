@@ -1,3 +1,4 @@
+const INX = 0xE8;
 const LDX = 0xA2;
 const JMP = 0x4C;
 const STX = 0x86;

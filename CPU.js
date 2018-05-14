@@ -98,6 +98,11 @@ class CPU {
         this.logger.log("JSR " + j, this.registers.PC);
         this.registers.PC = j;
         break;
+      case ops.INY:
+          this.logger.log("INY", this.registers.PC)
+          this.registers.Y++;
+          this.registers.PC++;
+      break;
       case ops.LDX:
           // LDX
           this.logger.log("LDX " + this.next_byte(), this.registers.PC)
@@ -117,6 +122,12 @@ class CPU {
           let addr = this.memory.fetch(this.registers.PC+1);
           this.memory.set(addr, this.registers.X)
           this.logger.log("STX " + addr, this.registers.PC);
+          this.registers.PC += 2;
+        break;
+      case ops.STY_ZP:
+          let addr1 = this.memory.fetch(this.registers.PC+1);
+          this.memory.set(addr1, this.registers.X)
+          this.logger.log("STY #" + addr1, this.registers.PC);
           this.registers.PC += 2;
         break;
       case ops.SEC:
