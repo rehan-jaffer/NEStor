@@ -1,4 +1,4 @@
-var ops = require('./opcodes.js');
+	var ops = require('./opcodes.js');
 
 function merge_bytes(b1, b2) {
   return parseInt(("00" + b2.toString(16)).substr(-2) + ("00" + b1.toString(16)).substr(-2), 16);
@@ -100,9 +100,9 @@ class CPU {
         break;
       case ops.LDX:
           // LDX
-          this.logger.log("LDX", this.registers.PC)
+          this.logger.log("LDX " + this.next_byte(), this.registers.PC)
           this.cycles += 3;
-          this.registers.X = this.registers.PC+1;
+          this.registers.X = this.next_byte();;
           this.registers.PC = this.registers.PC+2;
         break;
       case ops.JMP:
