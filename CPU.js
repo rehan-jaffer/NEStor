@@ -287,6 +287,11 @@ class CPU {
         }
         this.registers.PC += 2;
       break;
+      case ops.ADC_IMM:
+        this.registers.A = this.registers.A + this.next_byte();
+        this.logger.log("BAD ADC #" + this.next_byte(), this.registers.PC);
+        this.registers.PC += 2;
+      break;
       case ops.CMP_IMM:
         this.logger.log("CMP #" + this.next_byte(), this.registers.PC);
         if (this.registers.A >= this.next_byte()) {
@@ -297,6 +302,39 @@ class CPU {
           this.flags.negative = true;
         }
         this.registers.PC += 2;
+      break;
+      case ops.CPY_IMM:
+        this.logger.log("CPY #" + this.next_byte(), this.registers.PC);
+        let val2 = this.next_byte();
+        if (this.registers.Y >= val2) {
+          this.registers.carry = true;
+        }
+        if (this.registers.Y == val2) {
+          this.registers.zero = true;
+        }
+        if (this.registers.Y < val2) {
+          this.registers.negative = true;
+        }
+        this.registers.PC += 2;
+      break;
+      case ops.CPX_IMM:
+        this.logger.log("CPX #" + this.next_byte(), this.registers.PC);
+        let val = this.next_byte();
+        if (this.registers.X >= val) {
+          this.registers.carry = true;
+        }
+        if (this.registers.X == val) {
+          this.registers.zero = true;
+        }
+        if (this.registers.X < val) {
+          this.registers.negative = true;
+        }
+        this.registers.PC += 2;
+      break;
+      case ops.LDY_IMM:
+          this.logger.log("LDY #" + this.next_byte(), this.registers.PC)
+          this.registers.Y = this.next_byte();;
+          this.registers.PC += 2;
       break;
       case ops.BMI:
         this.logger.log("BMI " + this.next_byte(), this.registers.PC);
