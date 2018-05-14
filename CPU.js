@@ -292,6 +292,11 @@ class CPU {
         this.logger.log("BAD ADC #" + this.next_byte(), this.registers.PC);
         this.registers.PC += 2;
       break;
+      case ops.SBC_IMM:
+        this.registers.A = this.registers.A - this.next_byte();
+        this.logger.log("BAD SBC #" + this.next_byte(), this.registers.PC);
+        this.registers.PC += 2;
+      break;
       case ops.CMP_IMM:
         this.logger.log("CMP #" + this.next_byte(), this.registers.PC);
         if (this.registers.A >= this.next_byte()) {
