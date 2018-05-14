@@ -431,6 +431,9 @@ class Memory {
     }
 
   }
+  memsize() {
+    return this.rom.byteLength + 0xC000;
+  }
   load_rom(rom) {
     this.rom = rom;
   }
@@ -457,7 +460,7 @@ class Memory {
     } else if (addr >= 0x4018 && addr < 0x401F) {
       // APU and I/O functionality
     } else if (addr > 0x4020 && addr < 0xFFFF) {
-      if (addr >= 0xC000 && addr < 0xDFFF) {
+      if (addr >= 0xC000 && addr < 0xFFFF) {
         return this.rom[addr-0xC000];
       }
     }
