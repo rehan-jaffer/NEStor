@@ -98,10 +98,51 @@ class CPU {
         this.logger.log("JSR " + j, this.registers.PC);
         this.registers.PC = j;
         break;
+      case ops.TSX:
+          this.logger.log("TSX", this.registers.PC)
+          this.registers.X = this.registers.SP;
+          this.registers.PC++;
+      break;
+      case ops.TYA:
+          this.logger.log("TYA", this.registers.PC)
+          this.registers.A = this.registers.Y;
+          this.registers.PC++;
+      break;
+      case ops.TAY:
+          this.logger.log("TAY", this.registers.PC)
+          this.registers.Y = this.registers.A;
+          this.registers.PC++;
+      break;
+      case ops.TAX:
+          this.logger.log("TAX", this.registers.PC)
+          this.registers.Y = this.registers.A;
+          this.registers.PC++;
+      break;
+      case ops.TXA:
+          this.logger.log("TXA", this.registers.PC)
+          this.registers.A = this.registers.X;
+          this.registers.PC++;
+      break;
       case ops.INY:
           this.logger.log("INY", this.registers.PC)
           this.registers.Y++;
           this.registers.PC++;
+      break;
+      case ops.DEY:
+          this.logger.log("DEY", this.registers.PC)
+          this.registers.Y--;
+          this.registers.PC++;
+      break;
+      case ops.DEX:
+          this.logger.log("DEY", this.registers.PC)
+          this.registers.Y--;
+          this.registers.PC++;
+      break;
+      case ops.INX:
+          this.logger.log("INX", this.registers.PC)
+          this.registers.Y++;
+          this.registers.PC++;
+
       break;
       case ops.LDX:
           // LDX
@@ -119,10 +160,16 @@ class CPU {
           this.registers.PC = i;
         break;
       case ops.STX:
-          let addr = this.memory.fetch(this.registers.PC+1);
+          let addr = this.memory.fetch(this.next_byte());
           this.memory.set(addr, this.registers.X)
           this.logger.log("STX " + addr, this.registers.PC);
           this.registers.PC += 2;
+        break;
+      case ops.STX_ABS:
+          let addr3 = this.next_bytes();
+          this.memory.set(addr3, this.registers.X)
+          this.logger.log("STX " + addr3, this.registers.PC);
+          this.registers.PC += 3;
         break;
       case ops.STY_ZP:
           let addr1 = this.memory.fetch(this.registers.PC+1);
@@ -349,7 +396,7 @@ class CPU {
       break;
       case ops.LDY_IMM:
           this.logger.log("LDY #" + this.next_byte(), this.registers.PC)
-          this.registers.Y = this.next_byte();;
+          this.registers.Y = this.next_byte();
           this.registers.PC += 2;
       break;
       case ops.BMI:
@@ -448,6 +495,8 @@ class Memory {
 
   }
   memsize() {
+    console.log(this.rom[this.rom.byteLength]);
+    process.exit();
     return this.rom.byteLength + 0xC000;
   }
   load_rom(rom) {
@@ -458,6 +507,7 @@ class Memory {
       this.ram[loc] = value;
     }
   }
+
   fetch(addr) {
     if(addr >= 0 && addr < 0x7FF) {
       return this.ram[addr];
@@ -477,7 +527,7 @@ class Memory {
       // APU and I/O functionality
     } else if (addr > 0x4020 && addr < 0xFFFF) {
       if (addr >= 0xC000 && addr < 0xFFFF) {
-        return this.rom[addr-0xC000];
+        return this.rom[(addr-0xC000)];
       }
     }
 
