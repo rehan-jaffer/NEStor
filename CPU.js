@@ -47,6 +47,12 @@ class CPU {
     this.memory.load_rom(rom);
   }
 
+  debug_flags() {
+
+    return "A: " + this.registers.A + " X: " + this.registers.X + " Y: " + this.registers.Y;
+
+  }
+
   dump_bytes(addr, num) {
 
     for (let x=0;x<num;x++) {
@@ -103,6 +109,12 @@ class CPU {
           this.registers.X = this.registers.SP;
           this.registers.PC++;
       break;
+      case ops.TXS:
+          console.log(this.registers.SP);
+          this.logger.log("TXS", this.registers.PC)
+          this.registers.SP = this.registers.X;
+          this.registers.PC++;
+      break;
       case ops.TYA:
           this.logger.log("TYA", this.registers.PC)
           this.registers.A = this.registers.Y;
@@ -150,6 +162,19 @@ class CPU {
           this.cycles += 3;
           this.registers.X = this.next_byte();;
           this.registers.PC = this.registers.PC+2;
+        break;
+      case ops.LDX_ABS:
+          // LDX
+          this.logger.log("LDX " + this.next_bytes(), this.registers.PC)
+          this.cycles += 3;
+          this.registers.X = this.memory.fetch(this.next_bytes());
+          this.registers.PC += 3;
+        break;
+      case ops.LDA_ABS:
+          // LDX
+          this.logger.log("LDA " + this.next_bytes(), this.registers.PC)
+          this.registers.A = this.memory.fetch(this.next_bytes());
+          this.registers.PC += 3;
         break;
       case ops.JMP:
           let next_byte1 = this.memory.fetch(this.registers.PC+1);
@@ -323,6 +348,7 @@ class CPU {
         this.stack.push(this.status_byte());
       break;
       case ops.PLA:
+        console.log(this.stack)
         let byte = this.stack.pop();
         this.logger.log("PLA", this.registers.PC);
         this.registers.A = byte;
