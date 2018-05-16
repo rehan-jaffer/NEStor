@@ -1,9 +1,15 @@
-	var ops = require('./opcodes.js');
+var ops = require('./opcodes.js');
 
 function merge_bytes(b1, b2) {
   return parseInt(("00" + b2.toString(16)).substr(-2) + ("00" + b1.toString(16)).substr(-2), 16);
 }
 
+function split_byte(b1) {
+  let hex = b1.toString(16);
+  let b2 = parseInt(hex.slice(0,2), 16);
+  let b3 = parseInt(hex.slice(2,4), 16);
+  return [b2, b3];
+}
 
 const LOGGING_ENABLED = true;
 
@@ -104,7 +110,9 @@ class CPU {
           let nb2 = this.memory.fetch(this.registers.PC+2);
           let j = merge_bytes(nb1, nb2);
         this.log("JSR " + j, this.registers.PC);
-        this.stack.push(this.registers.PC+3);
+        let bytes = split_byte(this.registers.PC+3);
+        this.stack.push(bytes[0]);
+        this.stack.push(bytes[1]);
         this.registers.SP -= 2;
         this.registers.PC = j;
         break;
@@ -340,9 +348,8 @@ class CPU {
           }
       break;
       case ops.RTS:
-         let ret_addr = this.stack.pop()
+         let ret_addr = merge_bytes(this.stack.pop(), this.stack.pop())
          this.registers.SP++;
-         console.log(ret_addr);
          this.log("RTS " + ret_addr.toString(16), this.registers.PC)
          this.registers.PC = ret_addr;
       break;
