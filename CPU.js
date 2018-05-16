@@ -34,8 +34,7 @@ class CPU {
     this.registers = {PC: 0, SP: 0xFD, P:0, A:0, X: 0, Y: 0};
     this.flags = {carry: false, zero: false,
       interrupt_disable: true, decimal_mode: false,
-      break_command: false, overflow: false, negative: false};
-    this.interrupt = null;
+      break_command: true, overflow: false, negative: false};
     this.running = false;
     this.cycles = 0;
     this.logger = new Logger;
@@ -49,7 +48,7 @@ class CPU {
 
   debug_flags() {
 
-    return "A: " + this.registers.A.toString(16) + " X: " + this.registers.X.toString(16) + " Y: " + this.registers.Y.toString(16) + " SP: " + this.registers.SP.toString(16);
+    return "A: " + this.registers.A.toString(16) + " X: " + this.registers.X.toString(16) + " Y: " + this.registers.Y.toString(16) + " P: " + this.status_byte().toString(16) + " SP: " + this.registers.SP.toString(16);
 
   }
 
@@ -90,7 +89,7 @@ class CPU {
       case 234:
         this.log('NOOP', this.registers.PC);
         this.flags.break_command = true;
-        this.interrupt = true;
+        this.flags.interrupt_disable = true;
         this.registers.PC += 1;
         break;
       case 1:
@@ -100,12 +99,13 @@ class CPU {
         break;
       case 0x20:
         // push address of next operation onto the stack
-        this.stack.push(this.registers.PC+3);
         // then jump to subroutine location
           let nb1 = this.memory.fetch(this.registers.PC+1);
           let nb2 = this.memory.fetch(this.registers.PC+2);
           let j = merge_bytes(nb1, nb2);
         this.log("JSR " + j, this.registers.PC);
+        this.stack.push(this.registers.PC+3);
+        this.registers.SP -= 2;
         this.registers.PC = j;
         break;
       case ops.TSX:
@@ -165,6 +165,12 @@ class CPU {
           this.cycles += 3;
           this.registers.X = this.next_byte();
           this.registers.PC = this.registers.PC+2;
+          if (this.registers.X == 0) {
+            this.flags.zero = true;
+          }
+          if (this.registers.X.toString(2)[7] == 1) {
+            this.flags.negative = true;
+          }
         break;
       case ops.LDX_ABS:
           // LDX
@@ -227,7 +233,7 @@ class CPU {
       break;
       case ops.CLD:
           this.log("CLD", this.registers.PC);
-          this.flags.decimal = false;
+          this.flags.decimal_mode = false;
           this.registers.PC++;
       break;
       case ops.CLV:
@@ -238,16 +244,18 @@ class CPU {
       case ops.PHA:
         this.log("PHA", this.registers.PC);
         this.stack.push(this.registers.A);
-        this.registers.PC++;
+        this.registers.SP--;
+       this.registers.PC++;
       break;
       case ops.PLP:
         this.log("PLP", this.registers.PC);
         let pflags = this.stack.pop();
+        this.registers.SP++;
         let t = ("00000000" + pflags.toString(2)).substr(-8)
         this.flags.carry = ! t[0];
         this.flags.zero = ! t[1];
-        this.interrupt = ! t[2];
-        this.flags.decimal = ! t[3];
+        this.flags.interrupt_disable = ! t[2];
+        this.flags.decimal_mode = ! t[3];
         this.flags.break_command = ! t[4];
         this.flags.overflow = ! t[6];
         this.flags.negative = ! t[7];
@@ -333,16 +341,18 @@ class CPU {
       break;
       case ops.RTS:
          let ret_addr = this.stack.pop()
+         this.registers.SP++;
+         console.log(ret_addr);
          this.log("RTS " + ret_addr.toString(16), this.registers.PC)
          this.registers.PC = ret_addr;
       break;
       case ops.SEI:
-        this.interrupt = true;
+        this.flags.interrupt_disable = true;
         this.log("SEI", this.registers.PC);
         this.registers.PC++;
       break;
       case ops.SED:
-        this.flags.decimal = true;
+        this.flags.decimal_mode = true;
         this.log("SED", this.registers.PC);
         this.registers.PC++;
       break;
@@ -350,9 +360,11 @@ class CPU {
         this.log("PHP", this.registers.PC);
         this.registers.PC++;
         this.stack.push(this.status_byte());
+        this.registers.SP--;
       break;
       case ops.PLA:
         let byte = this.stack.pop();
+        this.registers.SP++;
         this.log("PLA", this.registers.PC);
         this.registers.A = byte;
         if (this.registers.A == 0) {
@@ -477,13 +489,14 @@ class CPU {
     let status = new Array;
     status.push(this.flags.carry)
     status.push(this.flags.zero)
-    status.push(this.interrupt)
-    status.push(this.flags.decimal)
+    status.push(this.flags.interrupt_disable)
+    status.push(this.flags.decimal_mode)
     status.push(this.flags.break_command)
     status.push(true)
     status.push(this.flags.overflow)
     status.push(this.flags.negative)
-    let byte = parseInt(status.map((s) => + s).join(''), 2);
+    let binary_digits = status.map((s) => + s)
+    let byte = parseInt(binary_digits.join(''), 2);
     return byte;
   }
 
@@ -491,7 +504,7 @@ class CPU {
 
     this.get_reset_vector();
 
-    this.registers.S = 0xFD;
+    this.registers.SP = 0xFD;
     this.registers.A = 0;
     this.registers.X = 0;
     this.registers.Y = 0;
@@ -501,10 +514,11 @@ class CPU {
     this.flags.zero = false;
     this.flags.interrupt_disable = true;
     this.flags.decimal_mode = false;
-    this.flags.break_Command = false;
+    this.flags.break_Command = true;
     this.flags.overflow = false;
     this.flags.negative = false;
     this.operations = [];
+//    this.stack.push(0xFF);
   }
 
 }
@@ -525,7 +539,6 @@ class Memory {
   }
   memsize() {
     console.log(this.rom[this.rom.byteLength]);
-    process.exit();
     return this.rom.byteLength + 0xC000;
   }
   load_rom(rom) {
@@ -534,11 +547,19 @@ class Memory {
   set(loc, value) {
     if(loc >= 0 && loc < 0x7FF) {
       this.ram[loc] = value;
+      if (loc >= 0x0100 && loc <= 0x01FF) {
+//        console.log("SNEAKIER STACK PUSH");
+      }
     }
   }
 
   fetch(addr) {
     if(addr >= 0 && addr <= 0x7FF) {
+      // 0000-00FF Zero-paged region
+      // 0100-01FF - Stack Memory
+      if (addr >= 0x0100 && addr <= 0x01FF) {
+//        console.log("sneaky stack read! " + addr);
+      }
       return this.ram[addr];
     } else if (addr >= 0x800 && addr < 0x0FFF) {
       return this.ram[addr-0x800];
