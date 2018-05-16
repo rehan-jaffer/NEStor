@@ -88,11 +88,6 @@ class CPU {
         this.flags.interrupt_disable = true;
         this.registers.PC += 1;
         break;
-      case 1:
-        break;
-      case 165:
-          this.dump_bytes(this.registers.PC, 5);
-        break;
       case 0x20:
         // push address of next operation onto the stack
         // then jump to subroutine location
@@ -157,6 +152,12 @@ class CPU {
           this.registers.PC++;
 
       break;
+      case ops.ROL_A:
+        /* partial */
+        this.log("ROL A", this.registers.PC);
+        this.registers.A << 1;
+        this.registers.PC++;
+      break;
       case ops.LDX:
           // LDX
           this.log("LDX " + this.next_byte(), this.registers.PC)
@@ -174,7 +175,7 @@ class CPU {
           // LDX
           this.log("LDX " + this.next_bytes(), this.registers.PC)
           this.cycles += 3;
-          console.log(this.memory.fetch(this.next_bytes()));
+ //         console.log(this.memory.fetch(this.next_bytes()));
           this.registers.X = this.memory.fetch(this.next_bytes());
           this.registers.PC += 3;
         break;
@@ -268,11 +269,19 @@ class CPU {
             this.registers.PC = bcc_addr;
           }
       break;
+      case ops.LDA_IMM:
+        this.log("LDA #$" + this.next_byte(), this.registers.PC)
+        this.registers.A = this.next_byte();
+        this.registers.PC += 2;
+        if (this.registers.A == 0) {
+          this.flags.zero = true;
+        }
+      break;
       case ops.LDA_ZP:
-          this.log("LDA #" + this.next_byte(), this.registers.PC)
+          this.log("LDA $" + this.next_byte(), this.registers.PC)
           this.cycles += 3;
           this.registers.A = this.memory.fetch(this.registers.PC+1);
-          this.registers.PC = this.registers.PC+2;
+          this.registers.PC += 2;
           if (this.registers.A == 0) {
             this.flags.zero = true;
           }
@@ -464,6 +473,21 @@ class CPU {
           this.flags.negative = true;
         }
         this.registers.PC += 2;
+      break;
+      case ops.LSR_A:
+        this.log("LSR A", this.registers.PC);
+        this.registers.A >>> 1;
+        this.registers.PC++;
+      break;
+      case ops.ASL_A:
+        this.log("LSR A", this.registers.PC);
+        this.registers.A *= 2;
+        this.registers.PC++;
+      break;
+      case ops.ROR_A:
+        this.log("ROR A", this.registers.PC);
+        this.registers.A >> 1;
+        this.registers.PC++;
       break;
       default:
         this.log('Unimplemented opcode ' + ops.op_table[opcode] + " at " + this.registers.PC.toString(16));
