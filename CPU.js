@@ -1,15 +1,5 @@
 var ops = require('./opcodes.js');
-
-function merge_bytes(b1, b2) {
-  return parseInt(("00" + b2.toString(16)).substr(-2) + ("00" + b1.toString(16)).substr(-2), 16);
-}
-
-function split_byte(b1) {
-  let hex = b1.toString(16);
-  let b2 = parseInt(hex.slice(0,2), 16);
-  let b3 = parseInt(hex.slice(2,4), 16);
-  return [b2, b3];
-}
+var utility = require('./utility.js');
 
 const LOGGING_ENABLED = true;
 
@@ -74,7 +64,7 @@ class CPU {
   next_bytes() {
     let nb1 = this.memory.fetch(this.registers.PC+1);
     let nb2 = this.memory.fetch(this.registers.PC+2);
-    let j = merge_bytes(nb1, nb2);
+    let j = utility.Utility.merge_bytes(nb1, nb2);
     return j
   }
 
@@ -108,9 +98,9 @@ class CPU {
         // then jump to subroutine location
           let nb1 = this.memory.fetch(this.registers.PC+1);
           let nb2 = this.memory.fetch(this.registers.PC+2);
-          let j = merge_bytes(nb1, nb2);
+          let j = utility.Utility.merge_bytes(nb1, nb2);
         this.log("JSR " + j, this.registers.PC);
-        let bytes = split_byte(this.registers.PC+3);
+        let bytes = utility.Utility.split_byte(this.registers.PC+3);
         this.stack.push(bytes[0]);
         this.stack.push(bytes[1]);
         this.registers.SP -= 2;
@@ -197,7 +187,7 @@ class CPU {
       case ops.JMP:
           let next_byte1 = this.memory.fetch(this.registers.PC+1);
           let next_byte2 = this.memory.fetch(this.registers.PC+2);
-          let i = merge_bytes(next_byte1, next_byte2);
+          let i = utility.Utility.merge_bytes(next_byte1, next_byte2);
           this.log("JMP " + i.toString(16), this.registers.PC);
           this.cycles += 3;
           this.registers.PC = i;
@@ -348,7 +338,7 @@ class CPU {
           }
       break;
       case ops.RTS:
-         let ret_addr = merge_bytes(this.stack.pop(), this.stack.pop())
+         let ret_addr = utility.Utility.merge_bytes(this.stack.pop(), this.stack.pop())
          this.registers.SP++;
          this.log("RTS " + ret_addr.toString(16), this.registers.PC)
          this.registers.PC = ret_addr;
