@@ -475,16 +475,19 @@ class CPU {
         this.registers.PC += 2;
       break;
       case ops.LSR_A:
+        /* partial */
         this.log("LSR A", this.registers.PC);
         this.registers.A >>> 1;
         this.registers.PC++;
       break;
       case ops.ASL_A:
+        /* partial */
         this.log("LSR A", this.registers.PC);
         this.registers.A *= 2;
         this.registers.PC++;
       break;
       case ops.ROR_A:
+        /* partial */
         this.log("ROR A", this.registers.PC);
         this.registers.A >> 1;
         this.registers.PC++;
