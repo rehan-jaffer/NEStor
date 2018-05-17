@@ -11,3 +11,8 @@ Initial approach is to implement the CPU by testing the status in relation to ne
 * ROM Loading - Partially implemented
 * PPU - Unimplemented
 * APU - Unimplemented
+
+## Performance considerations
+
+* Many parts of code are using string functions for bit manipulation to speed up time (and also because I am not good at bitwise operations). Fixing this by using bit math should speed up these functions considerably.
+
