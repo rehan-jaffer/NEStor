@@ -15,19 +15,24 @@ class ROM {
 
   load(filename) {
 
-    try {
-      let rom = fs.readFileSync(filename);      
-      this.rom = rom;
-    } catch (exception) {
-      console.log('Couldn\'t read ROM:' + exception);
-    }
+    var self = this;
 
-    this.parse();
+    fetch(filename).then(function(response) {
+      return response.arrayBuffer();
+    }).then(function(buffer) {
+      self.rom_buffer = buffer;
+      self.parse();
+    }).catch(function(error) {
+      console.log(error);
+      console.log("WTF");
+    });
  
   }
 
   parse() {
-    this.nes_str = this.rom.toString('utf-8', 0, 3);
+    this.rom = new Uint8Array(this.rom_buffer);
+    this.nes_str = Array.from(this.rom.slice(0,3)).map((s) => String.fromCharCode(s)).join('');
+    // .map((s) => String.fromCharCode(s));
     if (this.nes_str != "NES") {
       console.log("Error parsing iNES header");
       throw err;
@@ -35,8 +40,8 @@ class ROM {
     this.prg_r1_size = this.rom[PRG_ROM_SIZE_INDEX];
     this.chr_size = this.rom[CHR_ROM_SIZE_INDEX];
     const ROM_SIZE = ROM_MULTIPLE_SIZE*this.prg_r1_size;
-    this.prg_rom = new Buffer(ROM_SIZE);
-    this.rom.copy(this.prg_rom, 0, PRG_ROM_START_INDEX, ROM_SIZE);
+    this.prg_rom = new Uint8Array(ROM_SIZE);
+    this.prg_rom = this.rom.slice(PRG_ROM_START_INDEX, ROM_SIZE);
   }
 
 }
