@@ -2,6 +2,8 @@ var ops = require('./opcodes.js');
 var utility = require('./utility.js');
 
 const LOGGING_ENABLED = true;
+const MODE = "node";
+// mode = browser
 
 class Logger {
   constructor() {
@@ -13,6 +15,21 @@ class Logger {
         console.log(pc.toString(16) + " " + line + "\t\t\t" + flags);
       } else {
         console.log(line)
+      }
+    }
+  }
+}
+
+class WebLogger {
+  constructor() {
+    this.element = document.querySelector("#console");
+  }
+  log(line, pc=null, flags) {
+    if (LOGGING_ENABLED) {
+      if (pc) {
+        this.element.append(pc.toString(16) + " " + line + "\t\t\t" + flags + "\r\n");
+      } else {
+        this.element.append(line + "\r\n")
       }
     }
   }
@@ -33,7 +50,11 @@ class CPU {
       break_command: true, overflow: false, negative: false};
     this.running = false;
     this.cycles = 0;
-    this.logger = new Logger;
+    if (MODE == "browser") {
+      this.logger = new WebLogger;
+    } else {
+      this.logger = new Logger;
+    }
     this.stack = new Array;
     this.log("CPU Initialized");
   }
@@ -582,14 +603,16 @@ class Memory {
       // 0000-00FF Zero-paged region
       // 0100-01FF - Stack Memory
       if (addr >= 0x0100 && addr <= 0x01FF) {
-//        console.log("sneaky stack read! " + addr);
       }
       return this.ram[addr];
     } else if (addr >= 0x800 && addr < 0x0FFF) {
+      // mirrors RAM
       return this.ram[addr-0x800];
     } else if (addr >= 0x1000 && addr < 0x17FF) {
+      // mirrors RAM
       return this.ram[addr-0x1000];
     } else if (addr >= 0x1800 && addr < 0x1FFF) {
+      // mirrors RAM
       return this.ram[addr-0x1800];
     } else if (addr >= 0x2000 && addr < 0x2007) {
       // NES PPU registers
