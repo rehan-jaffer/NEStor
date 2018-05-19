@@ -22,19 +22,29 @@ class ROM {
 
     if (MODE == "browser") {
 
-      fetch(filename).then(function(response) {
-        return response.arrayBuffer();
-      }).then(function(buffer) {
-        self.rom_buffer = buffer;
-        self.parse();
-      }).catch(function(error) {
-        console.log(error);
-      });
+      return new Promise(function(resolve, reject) {
+        fetch(filename).then(function(response) {
+          return response.arrayBuffer();
+        }).then(function(buffer) {
+          self.rom_buffer = buffer;
+          self.parse();
+          resolve("SUCCESS")
+        }).catch(function(error) {
+          reject(error);
+        });
+
+        });
 
     } else {
 
-      this.rom_buffer = fs.readFileSync(filename);    
-      this.parse();
+      return new Promise(function(resolve, reject) {
+          self.rom_buffer = fs.readFileSync(filename);    
+          if (self.parse()) {
+            resolve("SUCCESS");
+          } else {
+            reject(self.rom_buffer);
+          }
+        });
 
     }
 
@@ -53,14 +63,15 @@ class ROM {
     // .map((s) => String.fromCharCode(s));
     if (this.nes_str != "NES") {
       console.log("Error parsing iNES header");
-      return null;
+      return false;
     }
     this.prg_r1_size = this.rom[PRG_ROM_SIZE_INDEX];
     this.chr_size = this.rom[CHR_ROM_SIZE_INDEX];
     const ROM_SIZE = ROM_MULTIPLE_SIZE*this.prg_r1_size;
-    this.prg_rom = new Uint8Array(ROM_SIZE);
+    // this.prg_rom = new Uint8Array(ROM_SIZE);
     // this.rom.copy(this.prg_rom, 0, PRG_ROM_START_INDEX, ROM_SIZE);
-    this.prg_rom = Uint8Array.from(this.rom_buffer.slice(PRG_ROM_START_INDEX, ROM_SIZE));
+    this.prg_rom = new Uint8Array(this.rom_buffer.slice(PRG_ROM_START_INDEX, ROM_SIZE));
+    return true
   }
 
 }
