@@ -1,5 +1,6 @@
 var ops = require('./opcodes.js');
 var utility = require('./utility.js');
+var ppu = require('./PPU.js');
 
 const LOGGING_ENABLED = true;
 const MODE = "node";
@@ -27,7 +28,7 @@ class WebLogger {
   log(line, pc=null, flags) {
     if (LOGGING_ENABLED) {
       if (pc) {
-        this.element.append(pc.toString(16) + " " + line + "\t\t\t" + flags + "\r\n");
+        this.element.append(pc.toString(16) + " " + line + "\t\t\t" + flags + "\r\n\r\n");
       } else {
         this.element.append(line + "\r\n")
       }
@@ -38,6 +39,7 @@ class WebLogger {
 class CPU {
 
   constructor() {
+    this.bus = Array;
     this.memory = new Memory;
     /* A - Accumulator Register, byte-wide
     X - Index register, byte-wide
@@ -57,6 +59,14 @@ class CPU {
     }
     this.stack = new Array;
     this.log("CPU Initialized");
+  }
+
+  read_bus() {
+    return this.bus.pop();
+  }
+
+  write_bus(op) {
+    return this.bus.push(op);
   }
 
   load_rom(rom) {
@@ -526,7 +536,9 @@ class CPU {
 
     let reset1 = this.memory.fetch(0xFFFC);
     let reset2 = this.memory.fetch(0xFFFD);
-    // process.exit();
+
+    return utility.Utility.merge_bytes(reset1, reset2);
+
   }
 
   status_byte() {
@@ -547,13 +559,13 @@ class CPU {
 
   reset() {
 
-    this.get_reset_vector();
+    let vec = this.get_reset_vector();
 
     this.registers.SP = 0xFD;
     this.registers.A = 0;
     this.registers.X = 0;
     this.registers.Y = 0;
-    this.registers.PC = 0xC000;
+    this.registers.PC = vec;
 
     this.flags.carry = false;
     this.flags.zero = false;
@@ -616,6 +628,18 @@ class Memory {
       return this.ram[addr-0x1800];
     } else if (addr >= 0x2000 && addr < 0x2007) {
       // NES PPU registers
+      var self = this;
+      let PPU_OPS = {0x2000: () => { }, // ppu ctrl
+       0x2001: () => { }, // ppu mask
+       0x2002: () => { return self.ppu.status }, // ppu status
+       0x2003: () => { }, // oama addr
+       0x2004: () => { }, // ppu scroll
+       0x2005: () => { }, // ppu addr
+       0x2006: () => { }, // ppu data
+       0x2007: () => { }, // oam dma
+       0x4014: () => { }}
+       console.log(PPU_OPS[addr]());
+       return PPU_OPS[addr]();
     } else if (addr >= 0x2008 && addr < 0x3FFF) {
       // Mirrors of $2000-2007
     } else if (addr >= 0x4000 && addr < 0x4017) {
@@ -623,9 +647,15 @@ class Memory {
     } else if (addr >= 0x4018 && addr < 0x401F) {
       // APU and I/O functionality
     } else if (addr > 0x4020 && addr < 0xFFFF) {
-      if (addr >= 0xC000 && addr < 0xFFFF) {
+      if (addr >= 0xC000 && addr < 0xFFFA) {
         return this.rom[(addr-0xC000)];
       }
+
+        if (addr == 0xFFFC) {
+          return 0x04;  
+        } else if (addr = 0xFFFD) {
+          return 0xC0;
+        }
     }
 
   }
