@@ -11,6 +11,9 @@ class Utility {
     return [b2, b3];
   }
 
+  static bit(number, n) {
+    return number.toString(2)[n];
+  }
 
 }
 
