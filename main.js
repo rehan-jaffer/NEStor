@@ -1,17 +1,20 @@
 var fs = require('fs');
 var rom = require('./iNES.js');
 var cpu = require('./CPU.js');
+var ppu = require('./PPU.js');
 
-class Emulator {
+class NES {
   constructor() {
     this.cpu = new cpu;
+    this.ppu = new ppu;
   }
   insert(filename) {
 
     var self = this;
     this.rom = new rom;
     return this.rom.load(filename).then(function() {
-      self.cpu.load_rom(self.rom.prg_rom);
+      self.cpu.load_rom(self.rom);
+      self.ppu.load_rom(self.rom);
     });
 
   }
@@ -24,7 +27,7 @@ class Emulator {
   }
 }
 
-let emu = new Emulator;
+let emu = new NES;
 emu.insert('nestest.nes').then(() => {
   emu.boot();
 }).catch(function(e) {
