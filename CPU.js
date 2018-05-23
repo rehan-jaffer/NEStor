@@ -128,13 +128,14 @@ class CPU {
       case 0x20:
         // push address of next operation onto the stack
         // then jump to subroutine location
-          let nb1 = this.fetch(this.registers.PC+1);
-          let nb2 = this.fetch(this.registers.PC+2);
-          let j = utility.Utility.merge_bytes(nb1, nb2);
+        let nb1 = this.fetch(this.registers.PC+1);
+        let nb2 = this.fetch(this.registers.PC+2);
+        let j = utility.Utility.merge_bytes(nb1, nb2);
         this.log("JSR " + j, this.registers.PC);
         let bytes = utility.Utility.split_byte(this.registers.PC+3);
         this.stack.push(bytes[0]);
         this.stack.push(bytes[1]);
+        this.cycles -= 6;
         this.registers.SP -= 2;
         this.registers.PC = j;
         break;
@@ -224,9 +225,9 @@ class CPU {
         this.registers.PC++;
       break;
       case ops.LDX:
-          // LDX
-          this.log("LDX " + this.next_byte(), this.registers.PC)
-          this.cycles += 3;
+          // LDX IMM
+          this.log("LDX #$" + this.next_byte(), this.registers.PC)
+          this.cycles -= 3;
           this.registers.X = this.next_byte();
           this.registers.PC = this.registers.PC+2;
           if (this.registers.X == 0) {
@@ -239,46 +240,49 @@ class CPU {
       case ops.LDX_ABS:
           // LDX
           this.log("LDX " + this.next_bytes(), this.registers.PC)
-          this.cycles += 3;
+          this.cycles -= 4;
  //         console.log(this.fetch(this.next_bytes()));
           this.registers.X = this.fetch(this.next_bytes());
           this.registers.PC += 3;
         break;
       case ops.LDA_ABS:
           // LDX
-          this.log("LDA " + this.next_bytes(), this.registers.PC)
+          this.log("LDA $" + this.next_bytes(), this.registers.PC)
+          this.cycles -= 4;
           this.registers.A = this.fetch(this.next_bytes());
           this.registers.PC += 3;
         break;
       case ops.JMP:
-          let next_byte1 = this.fetch(this.registers.PC+1);
-          let next_byte2 = this.fetch(this.registers.PC+2);
-          let i = utility.Utility.merge_bytes(next_byte1, next_byte2);
-          this.log("JMP " + i.toString(16), this.registers.PC);
-          this.cycles += 3;
-          this.registers.PC = i;
+          let jmp_addr = this.next_bytes()
+          this.log("JMP $" + jmp_addr.toString(16), this.registers.PC);
+          this.cycles -= 3;
+          this.registers.PC = jmp_addr;
         break;
       case ops.STX:
           let addr = this.fetch(this.next_byte());
           this.set(addr, this.registers.X)
-          this.log("STX " + addr, this.registers.PC);
+          this.log("STX $" + addr, this.registers.PC);
+          this.cycles -= 3;
           this.registers.PC += 2;
         break;
       case ops.STX_ABS:
           let addr3 = this.next_bytes();
           this.set(addr3, this.registers.X)
-          this.log("STX " + addr3, this.registers.PC);
+          this.log("STX $" + addr3, this.registers.PC);
+          this.cycles -= 4;
           this.registers.PC += 3;
         break;
       case ops.STY_ZP:
           let addr1 = this.fetch(this.registers.PC+1);
           this.set(addr1, this.registers.X)
           this.log("STY #" + addr1, this.registers.PC);
+          this.cycles -= 2;
           this.registers.PC += 2;
         break;
       case ops.SEC:
           this.log("SEC", this.registers.PC);
           this.flags.carry = true;
+          this.cycles -= 2;
           this.registers.PC++;
         break;
       case ops.BCS:
@@ -293,27 +297,32 @@ class CPU {
       case ops.CLC:
           this.log("CLC", this.registers.PC);
           this.flags.carry = false;
+          this.cycles -= 2;
           this.registers.PC++;
       break;
       case ops.CLD:
           this.log("CLD", this.registers.PC);
           this.flags.decimal_mode = false;
+          this.cycles -= 2;
           this.registers.PC++;
       break;
       case ops.CLV:
           this.log("CLD", this.registers.PC);
           this.flags.overflow = false;
+          this.cycles -= 2;
           this.registers.PC++;
       break;
       case ops.PHA:
         this.log("PHA", this.registers.PC);
         this.stack.push(this.registers.A);
+        this.cycles -= 3;
         this.registers.SP--;
-       this.registers.PC++;
+        this.registers.PC++;
       break;
       case ops.PLP:
         this.log("PLP", this.registers.PC);
         let pflags = this.stack.pop();
+        this.cycles -= 4;
         this.registers.SP++;
         let t = ("00000000" + pflags.toString(2)).substr(-8)
         this.flags.carry = ! t[0];
@@ -425,6 +434,7 @@ class CPU {
       case ops.SED:
         this.flags.decimal_mode = true;
         this.log("SED", this.registers.PC);
+        this.cycles -= 2;
         this.registers.PC++;
       break;
       case ops.PHP:
@@ -444,11 +454,13 @@ class CPU {
         if (byte[7] == "1") {
           this.flags.negative = true;
         }
+        this.cycles -= 4;
         this.registers.PC++;
       break;
       case ops.AND_IMM:
         this.registers.A = this.registers.A & this.next_byte();
         this.log("AND #" + this.next_byte(), this.registers.PC);
+        this.cycles -= 2;
         if (this.registers.A == 0) {
           this.flags.zero = true;
         }
@@ -460,15 +472,18 @@ class CPU {
       case ops.ADC_IMM:
         this.registers.A = this.registers.A + this.next_byte();
         this.log("BAD ADC #" + this.next_byte(), this.registers.PC);
+        this.cycles -= 2;
         this.registers.PC += 2;
       break;
       case ops.SBC_IMM:
         this.registers.A = this.registers.A - this.next_byte();
         this.log("BAD SBC #" + this.next_byte(), this.registers.PC);
+        this.cycles -= 2;
         this.registers.PC += 2;
       break;
       case ops.CMP_IMM:
         this.log("CMP #" + this.next_byte(), this.registers.PC);
+        this.cycles -= 2;
         if (this.registers.A >= this.next_byte()) {
           this.flags.carry = true;
         } else if (this.registers.A == this.flags.zero) {
@@ -481,6 +496,7 @@ class CPU {
       case ops.CPY_IMM:
         this.log("CPY #" + this.next_byte(), this.registers.PC);
         let val2 = this.next_byte();
+        this.cycles -= 2;
         if (this.registers.Y >= val2) {
           this.registers.carry = true;
         }
@@ -495,6 +511,7 @@ class CPU {
       case ops.CPX_IMM:
         this.log("CPX #" + this.next_byte(), this.registers.PC);
         let val = this.next_byte();
+        this.cycles -= 2;
         if (this.registers.X >= val) {
           this.registers.carry = true;
         }
@@ -509,6 +526,7 @@ class CPU {
       case ops.LDY_IMM:
           this.log("LDY #" + this.next_byte(), this.registers.PC)
           this.registers.Y = this.next_byte();
+          this.cycles -= 2;
           this.registers.PC += 2;
       break;
       case ops.BMI:
@@ -521,6 +539,7 @@ class CPU {
       break;
       case ops.ORA_IMM:
         this.registers.A = this.registers.A | this.next_byte();
+        this.cycles -= 2;
         if (this.registers.A == 0) {
           this.flags.zero = true;
         }
@@ -531,6 +550,7 @@ class CPU {
       break;
       case ops.EOR_IMM:
         this.registers.A = this.registers.A ^ this.next_byte();
+        this.cycles -= 2;
         if (this.registers.A == 0) {
           this.flags.zero = true;
         }
@@ -542,18 +562,21 @@ class CPU {
       case ops.LSR_A:
         /* partial */
         this.log("LSR A", this.registers.PC);
+        this.cycles -= 2;
         this.registers.A >>> 1;
         this.registers.PC++;
       break;
       case ops.ASL_A:
         /* partial */
         this.log("LSR A", this.registers.PC);
+        this.cycles -= 2;
         this.registers.A *= 2;
         this.registers.PC++;
       break;
       case ops.ROR_A:
         /* partial */
         this.log("ROR A", this.registers.PC);
+        this.cycles -= 2;
         this.registers.A >> 1;
         this.registers.PC++;
       break;
