@@ -14,7 +14,25 @@ The emulator's name comes from the tradition of a pun + an obscure reference. Ne
 * PPU - Unimplemented
 * APU - Unimplemented
 
+Running nestest.nes from 0xC000 will allow the CPU to execute about 700 instructions. Starting from the reset vector at 0xC004 will not, as it attempts PPU initialization.
+
 ## Performance considerations
 
 * Many parts of code are using string functions for bit manipulation to speed up time (and also because I am not good at bitwise operations). Fixing this by using bit math should speed up these functions considerably.
 
+# NES Specs
+
+## Registers
+
+* A - Accumulator register
+* X & Y - Index registers
+* SP - Stack Pointer
+* PC - Program Counter
+* P - Processor Status
+
+## Hardware
+
+* 8-bit 6502 CPU @ 1.7mhz
+* 16-bit Addressable Memory Space
+* PPU supports rendering 256x240 composed of 8x8 tiles
+* APU supports (?? I am not good at understanding audio)
