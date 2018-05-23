@@ -1,6 +1,7 @@
 var ops = require('./opcodes.js');
 var utility = require('./utility.js');
 var ppu = require('./PPU.js');
+const CYCLE_COUNT = 1000;
 
 const LOGGING_ENABLED = true;
 const MODE = "node";
@@ -39,13 +40,12 @@ class WebLogger {
 class CPU {
 
   constructor() {
+
+    this.ppu = new ppu;
+    this.cycles = CYCLE_COUNT;
     this.bus = Array;
     this.memory = new Memory;
-    /* A - Accumulator Register, byte-wide
-    X - Index register, byte-wide
-    Y - Index register, byte-wide
-    S - Stack pointer, byte-wide
-    P - Status register, byte-wide */
+    this.init_ram();
     this.registers = {PC: 0, SP: 0xFD, P:0, A:0, X: 0, Y: 0};
     this.flags = {carry: false, zero: false,
       interrupt_disable: true, decimal_mode: false,
@@ -61,6 +61,21 @@ class CPU {
     this.log("CPU Initialized");
   }
 
+  init_ram() {
+
+    this.ram = Array(65536);
+    // initialize 2KB of Internal RAM
+    for(let i=0; i < 0x2000; i++) {
+      this.ram[i] = 0xFF;
+    }
+  
+    // All others set to 0
+    for(let i=0x2000; i <= 0x8000; i++) {
+      this.ram[i] = 0;
+    }
+
+  }
+
   read_bus() {
     return this.bus.pop();
   }
@@ -70,7 +85,7 @@ class CPU {
   }
 
   load_rom(rom) {
-    this.memory.load_rom(rom);
+    this.rom = rom.prg_rom;
   }
 
   debug_flags() {
@@ -82,19 +97,19 @@ class CPU {
   dump_bytes(addr, num) {
 
     for (let x=0;x<num;x++) {
-      console.log((addr + x).toString(16) + ": " + this.memory.fetch((addr+x)).toString(16));
+      console.log((addr + x).toString(16) + ": " + this.fetch((addr+x)).toString(16));
     }
 
   }
 
   next_byte() {
-    let nb1 = this.memory.fetch(this.registers.PC+1);
+    let nb1 = this.fetch(this.registers.PC+1);
     return nb1;
   }
 
   next_bytes() {
-    let nb1 = this.memory.fetch(this.registers.PC+1);
-    let nb2 = this.memory.fetch(this.registers.PC+2);
+    let nb1 = this.fetch(this.registers.PC+1);
+    let nb2 = this.fetch(this.registers.PC+2);
     let j = utility.Utility.merge_bytes(nb1, nb2);
     return j
   }
@@ -110,7 +125,7 @@ class CPU {
 
     while(this.running == true) {
 
-      let opcode = this.memory.fetch(this.registers.PC);
+      let opcode = this.fetch(this.registers.PC);
       /* replace this with opcode table as soon as it gets unwieldy */
       switch(opcode) {
       case 234:
@@ -122,8 +137,8 @@ class CPU {
       case 0x20:
         // push address of next operation onto the stack
         // then jump to subroutine location
-          let nb1 = this.memory.fetch(this.registers.PC+1);
-          let nb2 = this.memory.fetch(this.registers.PC+2);
+          let nb1 = this.fetch(this.registers.PC+1);
+          let nb2 = this.fetch(this.registers.PC+2);
           let j = utility.Utility.merge_bytes(nb1, nb2);
         this.log("JSR " + j, this.registers.PC);
         let bytes = utility.Utility.split_byte(this.registers.PC+3);
@@ -135,51 +150,78 @@ class CPU {
       case ops.TSX:
           this.log("TSX", this.registers.PC)
           this.registers.X = this.registers.SP;
+          this.cycles -= 2;
+
+          if (this.registers.X == 0) {
+            this.flags.zero = true;
+          }
+
+          if (utility.Utility.bit(this.registers.X, 7) == 1) {
+            this.flags.negative = true;
+          }
+
           this.registers.PC++;
       break;
       case ops.TXS:
           this.log("TXS", this.registers.PC)
           this.registers.SP = this.registers.X;
+          this.cycles -= 2;
           this.registers.PC++;
       break;
       case ops.TYA:
           this.log("TYA", this.registers.PC)
           this.registers.A = this.registers.Y;
+          this.cycles -= 2;
+          if (this.registers.A == 0) {
+            this.flags.zero = true;
+          }
+
+          if (utility.Utility.bit(this.registers.negative, 7) == 1) {
+            this.flags.negative = true;
+          }
+
           this.registers.PC++;
       break;
       case ops.TAY:
           this.log("TAY", this.registers.PC)
           this.registers.Y = this.registers.A;
+          this.cycles -= 2;
           this.registers.PC++;
       break;
       case ops.TAX:
           this.log("TAX", this.registers.PC)
           this.registers.X = this.registers.A;
+          this.cycles -= 2;
           this.registers.PC++;
       break;
       case ops.TXA:
           this.log("TXA", this.registers.PC)
           this.registers.A = this.registers.X;
+          this.cycles -= 2;
           this.registers.PC++;
       break;
       case ops.INY:
           this.log("INY", this.registers.PC)
           this.registers.Y++;
+          this.cycles -= 2;
           this.registers.PC++;
       break;
       case ops.DEY:
           this.log("DEY", this.registers.PC)
           this.registers.Y--;
+          this.cycles -= 2;
           this.registers.PC++;
       break;
       case ops.DEX:
           this.log("DEY", this.registers.PC)
           this.registers.Y--;
+          this.cycles -= 2;
           this.registers.PC++;
       break;
       case ops.INX:
           this.log("INX", this.registers.PC)
           this.registers.Y++;
+          this.cycles -= 2;
           this.registers.PC++;
 
       break;
@@ -187,6 +229,7 @@ class CPU {
         /* partial */
         this.log("ROL A", this.registers.PC);
         this.registers.A << 1;
+        this.cycles -= 2;
         this.registers.PC++;
       break;
       case ops.LDX:
@@ -206,39 +249,39 @@ class CPU {
           // LDX
           this.log("LDX " + this.next_bytes(), this.registers.PC)
           this.cycles += 3;
- //         console.log(this.memory.fetch(this.next_bytes()));
-          this.registers.X = this.memory.fetch(this.next_bytes());
+ //         console.log(this.fetch(this.next_bytes()));
+          this.registers.X = this.fetch(this.next_bytes());
           this.registers.PC += 3;
         break;
       case ops.LDA_ABS:
           // LDX
           this.log("LDA " + this.next_bytes(), this.registers.PC)
-          this.registers.A = this.memory.fetch(this.next_bytes());
+          this.registers.A = this.fetch(this.next_bytes());
           this.registers.PC += 3;
         break;
       case ops.JMP:
-          let next_byte1 = this.memory.fetch(this.registers.PC+1);
-          let next_byte2 = this.memory.fetch(this.registers.PC+2);
+          let next_byte1 = this.fetch(this.registers.PC+1);
+          let next_byte2 = this.fetch(this.registers.PC+2);
           let i = utility.Utility.merge_bytes(next_byte1, next_byte2);
           this.log("JMP " + i.toString(16), this.registers.PC);
           this.cycles += 3;
           this.registers.PC = i;
         break;
       case ops.STX:
-          let addr = this.memory.fetch(this.next_byte());
-          this.memory.set(addr, this.registers.X)
+          let addr = this.fetch(this.next_byte());
+          this.set(addr, this.registers.X)
           this.log("STX " + addr, this.registers.PC);
           this.registers.PC += 2;
         break;
       case ops.STX_ABS:
           let addr3 = this.next_bytes();
-          this.memory.set(addr3, this.registers.X)
+          this.set(addr3, this.registers.X)
           this.log("STX " + addr3, this.registers.PC);
           this.registers.PC += 3;
         break;
       case ops.STY_ZP:
-          let addr1 = this.memory.fetch(this.registers.PC+1);
-          this.memory.set(addr1, this.registers.X)
+          let addr1 = this.fetch(this.registers.PC+1);
+          this.set(addr1, this.registers.X)
           this.log("STY #" + addr1, this.registers.PC);
           this.registers.PC += 2;
         break;
@@ -311,7 +354,7 @@ class CPU {
       case ops.LDA_ZP:
           this.log("LDA $" + this.next_byte(), this.registers.PC)
           this.cycles += 3;
-          this.registers.A = this.memory.fetch(this.registers.PC+1);
+          this.registers.A = this.fetch(this.registers.PC+1);
           this.registers.PC += 2;
           if (this.registers.A == 0) {
             this.flags.zero = true;
@@ -338,7 +381,7 @@ class CPU {
       case ops.STA_ZP:
           this.log("STA #" + this.next_byte(), this.registers.PC)
           this.cycles += 3;
-          this.memory.set(this.next_byte(), this.registers.A);
+          this.set(this.next_byte(), this.registers.A);
           this.registers.PC = this.registers.PC+2;
       break;
       case ops.BIT:
@@ -534,8 +577,8 @@ class CPU {
 
   get_reset_vector() {
 
-    let reset1 = this.memory.fetch(0xFFFC);
-    let reset2 = this.memory.fetch(0xFFFD);
+    let reset1 = this.fetch(0xFFFC);
+    let reset2 = this.fetch(0xFFFD);
 
     return utility.Utility.merge_bytes(reset1, reset2);
 
@@ -565,7 +608,7 @@ class CPU {
     this.registers.A = 0;
     this.registers.X = 0;
     this.registers.Y = 0;
-    this.registers.PC = vec;
+    this.registers.PC = 0xC000;
 
     this.flags.carry = false;
     this.flags.zero = false;
@@ -576,38 +619,6 @@ class CPU {
     this.flags.negative = false;
     this.operations = [];
 //    this.stack.push(0xFF);
-  }
-
-}
-
-class Memory {
-  constructor() {
-    this.ram = Array(65536);
-    // initialize 2KB of Internal RAM
-    for(let i=0; i < 0x2000; i++) {
-      this.ram[i] = 0xFF;
-    }
-  
-    // All others set to 0
-    for(let i=0x2000; i <= 0x8000; i++) {
-      this.ram[i] = 0;
-    }
-
-  }
-  memsize() {
-    console.log(this.rom[this.rom.byteLength]);
-    return this.rom.byteLength + 0xC000;
-  }
-  load_rom(rom) {
-    this.rom = rom;
-  }
-  set(loc, value) {
-    if(loc >= 0 && loc < 0x7FF) {
-      this.ram[loc] = value;
-      if (loc >= 0x0100 && loc <= 0x01FF) {
-//        console.log("SNEAKIER STACK PUSH");
-      }
-    }
   }
 
   fetch(addr) {
@@ -628,7 +639,7 @@ class Memory {
       return this.ram[addr-0x1800];
     } else if (addr >= 0x2000 && addr < 0x2007) {
       // NES PPU registers
-      var self = this;
+      let self = this;
       let PPU_OPS = {0x2000: () => { }, // ppu ctrl
        0x2001: () => { }, // ppu mask
        0x2002: () => { return self.ppu.status }, // ppu status
@@ -659,6 +670,30 @@ class Memory {
     }
 
   }
+
+  set(loc, value) {
+    if(loc >= 0 && loc < 0x7FF) {
+      this.ram[loc] = value;
+      if (loc >= 0x0100 && loc <= 0x01FF) {
+//        console.log("SNEAKIER STACK PUSH");
+      }
+    }
+  }
+
+}
+
+class Memory {
+  constructor() {
+
+  }
+  memsize() {
+    console.log(this.rom[this.rom.byteLength]);
+    return this.rom.byteLength + 0xC000;
+  }
+  load_rom(rom) {
+    this.rom = rom;
+  }
+
   store(addr) {
 
   }
