@@ -43,7 +43,6 @@ class CPU {
 
     this.ppu = new ppu;
     this.cycles = CYCLE_COUNT;
-    this.bus = Array;
     this.memory = new Memory;
     this.init_ram();
     this.registers = {PC: 0, SP: 0xFD, P:0, A:0, X: 0, Y: 0};
@@ -74,14 +73,6 @@ class CPU {
       this.ram[i] = 0;
     }
 
-  }
-
-  read_bus() {
-    return this.bus.pop();
-  }
-
-  write_bus(op) {
-    return this.bus.push(op);
   }
 
   load_rom(rom) {
