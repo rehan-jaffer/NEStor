@@ -12,9 +12,9 @@ class Utility {
   }
 
   static bit(number, n) {
-    return number.toString(2)[n];
+    return parseInt((("000000000" + number.toString(2)).substr(-8))[n]);
   }
 
 }
 
-module.exports = {Utility};
+module.exports = Utility;
