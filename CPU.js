@@ -1,41 +1,28 @@
 var ops = require('./opcodes.js');
 var utility = require('./utility.js');
 var ppu = require('./PPU.js');
-const CYCLE_COUNT = 1000;
+var logging = require('./logging.js');
+var operations = require('./ops.js');
 
+const CYCLE_COUNT = 1000;
 const LOGGING_ENABLED = true;
 const MODE = "node";
-// mode = browser
 
-class Logger {
-  constructor() {
-      this.logging = LOGGING_ENABLED;
-  }
-  log(line, pc=null, flags) {
-    if (this.logging) {
-      if (pc) {
-        console.log(pc.toString(16) + " " + line + "\t\t\t" + flags);
-      } else {
-        console.log(line)
-      }
-    }
-  }
-}
-
-class WebLogger {
-  constructor() {
-    this.element = document.querySelector("#console");
-  }
-  log(line, pc=null, flags) {
-    if (LOGGING_ENABLED) {
-      if (pc) {
-        this.element.append(pc.toString(16) + " " + line + "\t\t\t" + flags + "\r\n\r\n");
-      } else {
-        this.element.append(line + "\r\n")
-      }
-    }
-  }
-}
+const MEM_INTERNAL_RAM_START = 0x0;
+const MEM_RAM_MIRROR_1_START = 0x0800;
+const MEM_RAM_MIRROR_2_START = 0x1000;
+const MEM_RAM_MIRROR_3_START = 0x1800;
+const MEM_PPU_REGISTERS_START = 0x2000;
+const MEM_PPU_MIRROR_1_START = 0x2008;
+const MEM_APU_REGISTERS_START = 0x4000;
+const MEM_TEST_MODE_START = 0x4018;
+const MEM_ROM_START = 0x4020;
+const MEM_PRG_ROM_START = 0xC000;
+const RESET_VECTOR_START = 0xFFFC;
+const RESET_VECTOR_END = 0xFFFC;
+const RAM_SIZE_BYTES =  65536;
+const INITIAL_ADDRESS = 0xC000;
+const INITIAL_STACK_POINTER = 0xFD;
 
 class CPU {
 
@@ -52,23 +39,23 @@ class CPU {
     this.running = false;
     this.cycles = 0;
     if (MODE == "browser") {
-      this.logger = new WebLogger;
+      this.logger = new logging.WebLogger;
     } else {
-      this.logger = new Logger;
+      this.logger = new logging.Logger;
     }
+    this.operations = operations;
     this.stack = new Array;
     this.log("CPU Initialized");
   }
 
   init_ram() {
 
-    this.ram = Array(65536);
-    // initialize 2KB of Internal RAM
+    this.ram = new Array(RAM_SIZE_BYTES);
+
     for(let i=0; i < 0x2000; i++) {
       this.ram[i] = 0xFF;
     }
-  
-    // All others set to 0
+
     for(let i=0x2000; i <= 0x8000; i++) {
       this.ram[i] = 0;
     }
@@ -98,10 +85,12 @@ class CPU {
     return nb1;
   }
 
+  /* refactor this to have memory rw and rdw */
+
   next_bytes() {
     let nb1 = this.fetch(this.registers.PC+1);
     let nb2 = this.fetch(this.registers.PC+2);
-    let j = utility.Utility.merge_bytes(nb1, nb2);
+    let j = utility.merge_bytes(nb1, nb2);
     return j
   }
 
@@ -117,475 +106,14 @@ class CPU {
     while(this.running == true) {
 
       let opcode = this.fetch(this.registers.PC);
-      /* replace this with opcode table as soon as it gets unwieldy */
-      switch(opcode) {
-      case 234:
-        this.log('NOOP', this.registers.PC);
-        this.flags.break_command = true;
-        this.flags.interrupt_disable = true;
-        this.registers.PC += 1;
-        break;
-      case 0x20:
-        // push address of next operation onto the stack
-        // then jump to subroutine location
-        let nb1 = this.fetch(this.registers.PC+1);
-        let nb2 = this.fetch(this.registers.PC+2);
-        let j = utility.Utility.merge_bytes(nb1, nb2);
-        this.log("JSR " + j, this.registers.PC);
-        let bytes = utility.Utility.split_byte(this.registers.PC+3);
-        this.stack.push(bytes[0]);
-        this.stack.push(bytes[1]);
-        this.cycles -= 6;
-        this.registers.SP -= 2;
-        this.registers.PC = j;
-        break;
-      case ops.TSX:
-          this.log("TSX", this.registers.PC)
-          this.registers.X = this.registers.SP;
-          this.cycles -= 2;
 
-          if (this.registers.X == 0) {
-            this.flags.zero = true;
-          }
-
-          if (utility.Utility.bit(this.registers.X, 7) == 1) {
-            this.flags.negative = true;
-          }
-
-          this.registers.PC++;
-      break;
-      case ops.TXS:
-          this.log("TXS", this.registers.PC)
-          this.registers.SP = this.registers.X;
-          this.cycles -= 2;
-          this.registers.PC++;
-      break;
-      case ops.TYA:
-          this.log("TYA", this.registers.PC)
-          this.registers.A = this.registers.Y;
-          this.cycles -= 2;
-          if (this.registers.A == 0) {
-            this.flags.zero = true;
-          }
-
-          if (utility.Utility.bit(this.registers.negative, 7) == 1) {
-            this.flags.negative = true;
-          }
-
-          this.registers.PC++;
-      break;
-      case ops.TAY:
-          this.log("TAY", this.registers.PC)
-          this.registers.Y = this.registers.A;
-          this.cycles -= 2;
-          this.registers.PC++;
-      break;
-      case ops.TAX:
-          this.log("TAX", this.registers.PC)
-          this.registers.X = this.registers.A;
-          this.cycles -= 2;
-          this.registers.PC++;
-      break;
-      case ops.TXA:
-          this.log("TXA", this.registers.PC)
-          this.registers.A = this.registers.X;
-          this.cycles -= 2;
-          this.registers.PC++;
-      break;
-      case ops.INY:
-          this.log("INY", this.registers.PC)
-          this.registers.Y++;
-          this.cycles -= 2;
-          this.registers.PC++;
-      break;
-      case ops.DEY:
-          this.log("DEY", this.registers.PC)
-          this.registers.Y--;
-          this.cycles -= 2;
-          this.registers.PC++;
-      break;
-      case ops.DEX:
-          this.log("DEY", this.registers.PC)
-          this.registers.Y--;
-          this.cycles -= 2;
-          this.registers.PC++;
-      break;
-      case ops.INX:
-          this.log("INX", this.registers.PC)
-          this.registers.Y++;
-          this.cycles -= 2;
-          this.registers.PC++;
-
-      break;
-      case ops.ROL_A:
-        /* partial */
-        this.log("ROL A", this.registers.PC);
-        this.registers.A << 1;
-        this.cycles -= 2;
-        this.registers.PC++;
-      break;
-      case ops.LDX:
-          // LDX IMM
-          this.log("LDX #$" + this.next_byte(), this.registers.PC)
-          this.cycles -= 3;
-          this.registers.X = this.next_byte();
-          this.registers.PC = this.registers.PC+2;
-          if (this.registers.X == 0) {
-            this.flags.zero = true;
-          }
-          if (this.registers.X.toString(2)[7] == 1) {
-            this.flags.negative = true;
-          }
-        break;
-      case ops.LDX_ABS:
-          // LDX
-          this.log("LDX " + this.next_bytes(), this.registers.PC)
-          this.cycles -= 4;
- //         console.log(this.fetch(this.next_bytes()));
-          this.registers.X = this.fetch(this.next_bytes());
-          this.registers.PC += 3;
-        break;
-      case ops.LDA_ABS:
-          // LDX
-          this.log("LDA $" + this.next_bytes(), this.registers.PC)
-          this.cycles -= 4;
-          this.registers.A = this.fetch(this.next_bytes());
-          this.registers.PC += 3;
-        break;
-      case ops.JMP:
-          let jmp_addr = this.next_bytes()
-          this.log("JMP $" + jmp_addr.toString(16), this.registers.PC);
-          this.cycles -= 3;
-          this.registers.PC = jmp_addr;
-        break;
-      case ops.STX:
-          let addr = this.fetch(this.next_byte());
-          this.set(addr, this.registers.X)
-          this.log("STX $" + addr, this.registers.PC);
-          this.cycles -= 3;
-          this.registers.PC += 2;
-        break;
-      case ops.STX_ABS:
-          let addr3 = this.next_bytes();
-          this.set(addr3, this.registers.X)
-          this.log("STX $" + addr3, this.registers.PC);
-          this.cycles -= 4;
-          this.registers.PC += 3;
-        break;
-      case ops.STY_ZP:
-          let addr1 = this.fetch(this.registers.PC+1);
-          this.set(addr1, this.registers.X)
-          this.log("STY #" + addr1, this.registers.PC);
-          this.cycles -= 2;
-          this.registers.PC += 2;
-        break;
-      case ops.SEC:
-          this.log("SEC", this.registers.PC);
-          this.flags.carry = true;
-          this.cycles -= 2;
-          this.registers.PC++;
-        break;
-      case ops.BCS:
-          let bcs_addr = this.registers.PC+2 + this.next_byte();
-          this.log("BCS " + (this.next_byte()+this.registers.PC+2).toString(16), this.registers.PC);
-          this.registers.PC += 2;
-          if (this.flags.carry == true) {
-            this.log("- Branch taken", bcs_addr);
-            this.registers.PC = bcs_addr;
-          }
-        break;
-      case ops.CLC:
-          this.log("CLC", this.registers.PC);
-          this.flags.carry = false;
-          this.cycles -= 2;
-          this.registers.PC++;
-      break;
-      case ops.CLD:
-          this.log("CLD", this.registers.PC);
-          this.flags.decimal_mode = false;
-          this.cycles -= 2;
-          this.registers.PC++;
-      break;
-      case ops.CLV:
-          this.log("CLD", this.registers.PC);
-          this.flags.overflow = false;
-          this.cycles -= 2;
-          this.registers.PC++;
-      break;
-      case ops.PHA:
-        this.log("PHA", this.registers.PC);
-        this.stack.push(this.registers.A);
-        this.cycles -= 3;
-        this.registers.SP--;
-        this.registers.PC++;
-      break;
-      case ops.PLP:
-        this.log("PLP", this.registers.PC);
-        let pflags = this.stack.pop();
-        this.cycles -= 4;
-        this.registers.SP++;
-        let t = ("00000000" + pflags.toString(2)).substr(-8)
-        this.flags.carry = ! t[0];
-        this.flags.zero = ! t[1];
-        this.flags.interrupt_disable = ! t[2];
-        this.flags.decimal_mode = ! t[3];
-        this.flags.break_command = ! t[4];
-        this.flags.overflow = ! t[6];
-        this.flags.negative = ! t[7];
-        this.registers.PC++;
-      break;
-      case ops.BCC:
-          let bcc_addr = this.registers.PC+2 + this.next_byte();
-          this.log("BCC " + (this.next_byte()+this.registers.PC+2).toString(16), this.registers.PC);
-          this.registers.PC += 2;
-          if (this.flags.carry == false) {
-            this.log("- Branch taken", bcc_addr);
-            this.registers.PC = bcc_addr;
-          }
-      break;
-      case ops.LDA_IMM:
-        this.log("LDA #$" + this.next_byte(), this.registers.PC)
-        this.registers.A = this.next_byte();
-        this.registers.PC += 2;
-        if (this.registers.A == 0) {
-          this.flags.zero = true;
-        }
-      break;
-      case ops.LDA_ZP:
-          this.log("LDA $" + this.next_byte(), this.registers.PC)
-          this.cycles += 3;
-          this.registers.A = this.fetch(this.registers.PC+1);
-          this.registers.PC += 2;
-          if (this.registers.A == 0) {
-            this.flags.zero = true;
-          }
-      break;
-      case ops.BEQ:
-          this.log("BEQ " + (this.next_byte() + this.registers.PC + 2).toString(16), this.registers.PC);
-          if (this.flags.zero == true) {
-//            this.log("Branch taken", bvs_addr);
-            this.registers.PC += 2 + this.next_byte();
-          } else {
-            this.registers.PC += 2;
-          }
-      break;
-      case ops.BNE:
-          this.log("BNE " + (this.next_byte() + this.registers.PC + 2).toString(16), this.registers.PC);
-          if (this.flags.zero == false) {
-//            this.log("Branch taken", bvs_addr);
-            this.registers.PC += 2 + this.next_byte();
-          } else {
-            this.registers.PC += 2;
-          }
-      break;
-      case ops.STA_ZP:
-          this.log("STA #" + this.next_byte(), this.registers.PC)
-          this.cycles += 3;
-          this.set(this.next_byte(), this.registers.A);
-          this.registers.PC = this.registers.PC+2;
-      break;
-      case ops.BIT:
-          this.log("BIT #" + this.next_byte(), this.registers.PC)
-          let mem = this.next_byte();
-          let r = (this.registers.A & mem).toString(2);
-          let s = ("00000000" + r).substr(-8)
-          this.flags.negative = !!s[7];
-          this.flags.overflow = !!s[6];
-          this.registers.PC += 2;
-      break;
-      case ops.BVS:
-          let bvs_addr = this.registers.PC+2 + this.next_byte();
-          this.log("BVS " + (this.next_byte()+this.registers.PC+2).toString(16), this.registers.PC);
-          this.registers.PC += 2;
-          if (this.flags.overflow == true) {
-            this.log("- Branch taken", bvs_addr);
-            this.registers.PC = bvs_addr;
-          }
-      break;
-      case ops.BVC:
-          let bvc_addr = this.registers.PC+2 + this.next_byte();
-          this.log("BVC " + (this.next_byte()+this.registers.PC+2).toString(16), this.registers.PC);
-          this.registers.PC += 2;
-          if (this.flags.overflow == false) {
-            this.log("- Branch taken", bvc_addr);
-            this.registers.PC = bvc_addr;
-          }
-      break;
-      case ops.BPL:
-          let bpl_addr = this.registers.PC+2 + this.next_byte();
-          this.log("BPL " + (this.next_byte()+this.registers.PC+2).toString(16), this.registers.PC);
-          this.registers.PC += 2;
-          if (this.flags.negative == false) {
-            this.log("- Branch taken", bpl_addr);
-            this.registers.PC = bpl_addr;
-          }
-      break;
-      case ops.RTS:
-         let ret_addr = utility.Utility.merge_bytes(this.stack.pop(), this.stack.pop())
-         this.registers.SP++;
-         this.log("RTS " + ret_addr.toString(16), this.registers.PC)
-         this.registers.PC = ret_addr;
-      break;
-      case ops.SEI:
-        this.flags.interrupt_disable = true;
-        this.log("SEI", this.registers.PC);
-        this.registers.PC++;
-      break;
-      case ops.SED:
-        this.flags.decimal_mode = true;
-        this.log("SED", this.registers.PC);
-        this.cycles -= 2;
-        this.registers.PC++;
-      break;
-      case ops.PHP:
-        this.log("PHP", this.registers.PC);
-        this.registers.PC++;
-        this.stack.push(this.status_byte());
-        this.registers.SP--;
-      break;
-      case ops.PLA:
-        let byte = this.stack.pop();
-        this.registers.SP++;
-        this.log("PLA", this.registers.PC);
-        this.registers.A = byte;
-        if (this.registers.A == 0) {
-          this.flags.zero = true;
-        }
-        if (byte[7] == "1") {
-          this.flags.negative = true;
-        }
-        this.cycles -= 4;
-        this.registers.PC++;
-      break;
-      case ops.AND_IMM:
-        this.registers.A = this.registers.A & this.next_byte();
-        this.log("AND #" + this.next_byte(), this.registers.PC);
-        this.cycles -= 2;
-        if (this.registers.A == 0) {
-          this.flags.zero = true;
-        }
-        if (this.registers.A.toString(2)[7] == 1) {
-          this.flags.negative = true;
-        }
-        this.registers.PC += 2;
-      break;
-      case ops.ADC_IMM:
-        this.registers.A = this.registers.A + this.next_byte();
-        this.log("BAD ADC #" + this.next_byte(), this.registers.PC);
-        this.cycles -= 2;
-        this.registers.PC += 2;
-      break;
-      case ops.SBC_IMM:
-        this.registers.A = this.registers.A - this.next_byte();
-        this.log("BAD SBC #" + this.next_byte(), this.registers.PC);
-        this.cycles -= 2;
-        this.registers.PC += 2;
-      break;
-      case ops.CMP_IMM:
-        this.log("CMP #" + this.next_byte(), this.registers.PC);
-        this.cycles -= 2;
-        if (this.registers.A >= this.next_byte()) {
-          this.flags.carry = true;
-        } else if (this.registers.A == this.flags.zero) {
-          this.flags.zero = true;
-        } else if ((this.registers.A).toString(2)[7] == 1) {
-          this.flags.negative = true;
-        }
-        this.registers.PC += 2;
-      break;
-      case ops.CPY_IMM:
-        this.log("CPY #" + this.next_byte(), this.registers.PC);
-        let val2 = this.next_byte();
-        this.cycles -= 2;
-        if (this.registers.Y >= val2) {
-          this.registers.carry = true;
-        }
-        if (this.registers.Y == val2) {
-          this.registers.zero = true;
-        }
-        if (this.registers.Y < val2) {
-          this.registers.negative = true;
-        }
-        this.registers.PC += 2;
-      break;
-      case ops.CPX_IMM:
-        this.log("CPX #" + this.next_byte(), this.registers.PC);
-        let val = this.next_byte();
-        this.cycles -= 2;
-        if (this.registers.X >= val) {
-          this.registers.carry = true;
-        }
-        if (this.registers.X == val) {
-          this.registers.zero = true;
-        }
-        if (this.registers.X < val) {
-          this.registers.negative = true;
-        }
-        this.registers.PC += 2;
-      break;
-      case ops.LDY_IMM:
-          this.log("LDY #" + this.next_byte(), this.registers.PC)
-          this.registers.Y = this.next_byte();
-          this.cycles -= 2;
-          this.registers.PC += 2;
-      break;
-      case ops.BMI:
-        this.log("BMI " + this.next_byte(), this.registers.PC);
-        if (this.flags.negative == true) {
-          this.registers.PC += this.next_byte() + 2;
-        } else {
-          this.registers.PC += 2;
-        }
-      break;
-      case ops.ORA_IMM:
-        this.registers.A = this.registers.A | this.next_byte();
-        this.cycles -= 2;
-        if (this.registers.A == 0) {
-          this.flags.zero = true;
-        }
-        if (this.registers.A.toString(2)[7] == 1) {
-          this.flags.negative = true;
-        }
-        this.registers.PC += 2;
-      break;
-      case ops.EOR_IMM:
-        this.registers.A = this.registers.A ^ this.next_byte();
-        this.cycles -= 2;
-        if (this.registers.A == 0) {
-          this.flags.zero = true;
-        }
-        if (this.registers.A.toString(2)[7] == 1) {
-          this.flags.negative = true;
-        }
-        this.registers.PC += 2;
-      break;
-      case ops.LSR_A:
-        /* partial */
-        this.log("LSR A", this.registers.PC);
-        this.cycles -= 2;
-        this.registers.A >>> 1;
-        this.registers.PC++;
-      break;
-      case ops.ASL_A:
-        /* partial */
-        this.log("LSR A", this.registers.PC);
-        this.cycles -= 2;
-        this.registers.A *= 2;
-        this.registers.PC++;
-      break;
-      case ops.ROR_A:
-        /* partial */
-        this.log("ROR A", this.registers.PC);
-        this.cycles -= 2;
-        this.registers.A >> 1;
-        this.registers.PC++;
-      break;
-      default:
-        this.log('Unimplemented opcode ' + ops.op_table[opcode] + " at " + this.registers.PC.toString(16));
+      if (this.operations[ops.op_table[opcode]]) {
+        this.operations[ops.op_table[opcode]].bind(this).call();
+      } else {
+        console.log(ops.op_table[opcode]);
         process.exit();
-        break;
       }
-      
+
     }
   }
 
@@ -594,7 +122,7 @@ class CPU {
     let reset1 = this.fetch(0xFFFC);
     let reset2 = this.fetch(0xFFFD);
 
-    return utility.Utility.merge_bytes(reset1, reset2);
+    return utility.merge_bytes(reset1, reset2);
 
   }
 
@@ -618,11 +146,11 @@ class CPU {
 
     let vec = this.get_reset_vector();
 
-    this.registers.SP = 0xFD;
+    this.registers.SP = INITIAL_STACK_POINTER;
     this.registers.A = 0;
     this.registers.X = 0;
     this.registers.Y = 0;
-    this.registers.PC = 0xC000;
+    this.registers.PC = INITIAL_ADDRESS;
 
     this.flags.carry = false;
     this.flags.zero = false;
@@ -631,9 +159,40 @@ class CPU {
     this.flags.break_Command = true;
     this.flags.overflow = false;
     this.flags.negative = false;
-    this.operations = [];
-//    this.stack.push(0xFF);
   }
+
+
+   read(addr, n=1) {
+    switch (true) {
+      case (addr < MEM_RAM_MIRROR_1_START):
+          this.ram.slice(addr, n);
+        break;
+      case (addr < MEM_RAM_MIRROR_2_START):
+          this.ram.slice(addr, n);
+        break;
+      case (addr < MEM_RAM_MIRROR_3_START):
+          this.ram.slice(addr, n);
+      break;
+      case (addr < MEM_PPU_REGISTERS_START):
+        this.ram.slice(addr, n);
+      break;
+      case (addr < MEM_PPU_MIRROR_1_START):
+        // do ppu stuff
+      default:
+      case (addr < MEM_APU_REGISTERS_START):
+        // do ppu stuff, mirrored
+      break;
+      case (addr < MEM_TEST_MODE_START):
+        // do apu stuff
+      break;
+      case (addr < MEM_ROM_START):
+        // test mode stuff
+      break;
+      case (addr < MEM_END):
+        // rom region
+      break;
+    }
+   }
 
   fetch(addr) {
     if(addr >= 0 && addr <= 0x7FF) {
