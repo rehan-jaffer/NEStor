@@ -124,15 +124,18 @@
           }
         },
       LDX_ABS: function() {
-          // LDX
           this.log("LDX " + this.next_bytes(), this.registers.PC)
           this.cycles -= 4;
- //         console.log(this.fetch(this.next_bytes()));
           this.registers.X = this.fetch(this.next_bytes());
           this.registers.PC += 3;
         },
+      LDA_IND_X: function() {
+          this.log("LDA ($" + this.next_byte().toString(16) + "), X", this.registers.PC)
+          this.cycles -= 4;
+          this.registers.A = this.fetch(this.next_byte() + this.registers.X);
+          this.registers.PC += 2;
+      },
       LDA_ABS: function() {
-          // LDX
           this.log("LDA $" + this.next_bytes(), this.registers.PC)
           this.cycles -= 4;
           this.registers.A = this.fetch(this.next_bytes());
@@ -179,6 +182,13 @@
           this.cycles -= 4;
           this.registers.PC += 3;
         },
+      STA_IND_X: function() {
+          let sta_address = this.fetch(this.next_byte() + this.registers.X)
+          this.set(sta_address, this.registers.A);
+          this.log("STA $" + sta_address, this.registers.PC);
+          this.cycles -= 4;
+          this.registers.PC += 2;
+      },
       SEC: function() {
           this.log("SEC", this.registers.PC);
           this.flags.carry = true;
@@ -459,22 +469,96 @@
         }
         this.registers.PC += 2;
       },
+      EOR_ZP: function() {
+        this.registers.A = this.registers.A ^ this.next_byte();
+        this.cycles -= 3;
+        if (this.registers.A == 0) {
+          this.flags.zero = true;
+        }
+        if (utility.bit(this.registers.A.toString, 7) == 1) {
+          this.flags.negative = true;
+        }
+        this.registers.PC += 2;
+      },
+      EOR_ZP_X: function() {
+        this.registers.A = this.registers.A ^ this.fetch(this.next_byte() + this.registers.X);
+        this.cycles -= 4;
+        if (this.registers.A == 0) {
+          this.flags.zero = true;
+        }
+        if (utility.bit(this.registers.A, 7) == 1) {
+          this.flags.negative = true;
+        }
+        this.registers.PC += 3;
+      },
+      EOR_ABS: function() {
+        this.registers.A = this.registers.A ^ this.fetch(this.next_bytes());
+        this.cycles -= 4;
+        if (this.registers.A == 0) {
+          this.flags.zero = true;
+        }
+        if (utility.bit(this.registers.A, 7) == 1) {
+          this.flags.negative = true;
+        }
+        this.registers.PC += 3;
+      },
+      EOR_ABS_X: function() {
+        this.registers.A = this.registers.A ^ this.fetch(this.next_bytes() + this.registers.X);
+        this.cycles -= 4;
+        if (this.registers.A == 0) {
+          this.flags.zero = true;
+        }
+        if (utility.bit(this.registers.A, 7) == 1) {
+          this.flags.negative = true;
+        }
+        this.registers.PC += 3;
+      },
+      EOR_ABS_Y: function() {
+        this.registers.A = this.registers.A ^ this.fetch(this.next_bytes() + this.registers.Y);
+        this.cycles -= 4;
+        if (this.registers.A == 0) {
+          this.flags.zero = true;
+        }
+        if (utility.bit(this.registers.A, 7) == 1) {
+          this.flags.negative = true;
+        }
+        this.registers.PC += 3;
+      },
+      EOR_IND_X: function() {
+        this.registers.A = this.registers.A ^ (this.fetch(this.next_bytes()) + this.registers.X);
+        this.cycles -= 4;
+        if (this.registers.A == 0) {
+          this.flags.zero = true;
+        }
+        if (utility.bit(this.registers.A, 7) == 1) {
+          this.flags.negative = true;
+        }
+        this.registers.PC += 3;
+      },
+      EOR_IND_Y: function() {
+        this.registers.A = this.registers.A ^ (this.fetch(this.next_bytes()) + this.registers.Y);
+        this.cycles -= 4;
+        if (this.registers.A == 0) {
+          this.flags.zero = true;
+        }
+        if (utility.bit(this.registers.A, 7) == 1) {
+          this.flags.negative = true;
+        }
+        this.registers.PC += 3;
+      },
       LSR_A: function() {
-        /* partial */
         this.log("LSR A", this.registers.PC);
         this.cycles -= 2;
         this.registers.A >>> 1;
         this.registers.PC++;
       },
       ASL_A: function() {
-        /* partial */
         this.log("LSR A", this.registers.PC);
         this.cycles -= 2;
         this.registers.A *= 2;
         this.registers.PC++;
       },
       ROR_A: function() {
-        /* partial */
         this.log("ROR A", this.registers.PC);
         this.cycles -= 2;
         this.registers.A >> 1;
