@@ -9,15 +9,13 @@
         this.registers.PC += 1;
         },
         NOP: function() {
-          this.registers.PC++;
+          this.log("NOP");
         },
         JSR_ABS: function() {
         // push address of next operation onto the stack
         // then jump to subroutine location
-        let nb1 = this.fetch(this.registers.PC+1);
-        let nb2 = this.fetch(this.registers.PC+2);
-        let j = utility.merge_bytes(nb1, nb2);
-        this.log("JSR " + j, this.registers.PC);
+        let j = this.next_bytes();
+        this.log("JSR " + (j).toString(16), this.registers.PC);
         let bytes = utility.split_byte(this.registers.PC+3);
         this.stack.push(bytes[0]);
         this.stack.push(bytes[1]);
@@ -111,23 +109,12 @@
         this.registers.PC++;
       },
       LDX_IMM: function() {
-          // LDX IMM
-          this.log("LDX #$" + this.next_byte(), this.registers.PC)
-          this.cycles -= 3;
           this.registers.X = this.next_byte();
-          this.registers.PC = this.registers.PC+2;
-          if (this.registers.X == 0) {
-            this.flags.zero = true;
-          }
-          if (this.registers.X.toString(2)[7] == 1) {
-            this.flags.negative = true;
-          }
+          this.log("LDX #$" + this.next_byte(), this.registers.PC)
         },
       LDX_ABS: function() {
-          this.log("LDX " + this.next_bytes(), this.registers.PC)
-          this.cycles -= 4;
           this.registers.X = this.fetch(this.next_bytes());
-          this.registers.PC += 3;
+          this.log("LDX " + this.next_bytes(), this.registers.PC)
         },
       LDA_IND_X: function() {
           this.log("LDA ($" + this.next_byte().toString(16) + "), X", this.registers.PC)
@@ -142,9 +129,8 @@
           this.registers.PC += 3;
         },
       JMP: function() {
-          let jmp_addr = this.next_bytes()
+          let jmp_addr = this.next_bytes();
           this.log("JMP $" + jmp_addr.toString(16), this.registers.PC);
-          this.cycles -= 3;
           this.registers.PC = jmp_addr;
         },
       STX: function() {
@@ -158,8 +144,6 @@
           let addr = this.fetch(this.next_byte());
           this.set(addr, this.registers.X)
           this.log("STX $" + addr, this.registers.PC);
-          this.cycles -= 3;
-          this.registers.PC += 2;
         },
       STX_ABS: function() {
           let addr3 = this.next_bytes();
@@ -192,8 +176,6 @@
       SEC: function() {
           this.log("SEC", this.registers.PC);
           this.flags.carry = true;
-          this.cycles -= 2;
-          this.registers.PC++;
         },
       BCS: function() {
           let bcs_addr = this.registers.PC+2 + this.next_byte();
@@ -271,9 +253,8 @@
           }
       },
       BEQ: function() {
-          this.log("BEQ " + (this.next_byte() + this.registers.PC + 2).toString(16), this.registers.PC);
+          this.log("BEQ " + (this.next_byte() + this.registers.PC).toString(16), this.registers.PC);
           if (this.flags.zero == true) {
-//            this.log("Branch taken", bvs_addr);
             this.registers.PC += 2 + this.next_byte();
           } else {
             this.registers.PC += 2;
@@ -374,7 +355,43 @@
         if (this.registers.A == 0) {
           this.flags.zero = true;
         }
-        if (this.registers.A.toString(2)[7] == 1) {
+        if (utility.bit(this.registers.A, 7) == 1) {
+          this.flags.negative = true;
+        }
+        this.registers.PC += 2;
+      },
+      AND_ZP: function() {
+        this.registers.A = this.registers.A & this.next_byte();
+        this.log("AND $" + this.next_byte(), this.registers.PC);
+        this.cycles -= 3;
+        if (this.registers.A == 0) {
+          this.flags.zero = true;
+        }
+        if (utility.bit(this.registers.A, 7) == 1) {
+          this.flags.negative = true;
+        }
+        this.registers.PC += 2;
+      },
+      AND_IND_X: function() {
+        this.registers.A = this.registers.A & this.fetch(this.next_byte() + this.registers.X);
+        this.log("AND (" + this.next_byte() + "), X", this.registers.PC);
+        this.cycles -= 6;
+        if (this.registers.A == 0) {
+          this.flags.zero = true;
+        }
+        if (utility.bit(this.registers.A, 7) == 1) {
+          this.flags.negative = true;
+        }
+        this.registers.PC += 2;
+      },
+      AND_IND_Y: function() {
+        this.registers.A = this.registers.A & this.fetch(this.next_byte() + this.registers.Y);
+        this.log("AND (" + this.next_byte() + "), X", this.registers.PC);
+        this.cycles -= 5;
+        if (this.registers.A == 0) {
+          this.flags.zero = true;
+        }
+        if (utility.bit(this.registers.A, 7) == 1) {
           this.flags.negative = true;
         }
         this.registers.PC += 2;
@@ -448,12 +465,49 @@
         }
       },
       ORA_IMM: function() {
+        this.log("ORA " + this.next_byte(), this.registers.PC);
         this.registers.A = this.registers.A | this.next_byte();
         this.cycles -= 2;
         if (this.registers.A == 0) {
           this.flags.zero = true;
         }
-        if (this.registers.A.toString(2)[7] == 1) {
+        if (utility.bit(this.registers.A, 7) == 1) {
+          this.flags.negative = true;
+        }
+        this.registers.PC += 2;
+      },
+      ORA_ABS_X: function() {
+        this.log("ORA (" + this.next_bytes() + "), X", this.registers.PC);
+        this.registers.A = this.registers.A | (this.next_bytes() + this.registers.X);
+        this.cycles -= 2;
+        if (this.registers.A == 0) {
+          this.flags.zero = true;
+        }
+        if (utility.bit(this.registers.A, 7) == 1) {
+          this.flags.negative = true;
+        }
+        this.registers.PC += 2;
+      }, 
+      ORA_IND_X: function() {
+        this.log("ORA (" + this.fetch(this.next_byte()) + "), X", this.registers.PC);
+        this.registers.A = this.registers.A | this.fetch(this.next_byte() + this.registers.X);
+        this.cycles -= 2;
+        if (this.registers.A == 0) {
+          this.flags.zero = true;
+        }
+        if (utility.bit(this.registers.A, 7) == 1) {
+          this.flags.negative = true;
+        }
+        this.registers.PC += 2;
+      },
+      ORA_IND_Y: function() {
+        this.log("ORA (" + this.fetch(this.next_byte()) + "), Y", this.registers.PC);
+        this.registers.A = this.registers.A | this.fetch(this.next_byte() + this.registers.Y);
+        this.cycles -= 2;
+        if (this.registers.A == 0) {
+          this.flags.zero = true;
+        }
+        if (utility.bit(this.registers.A, 7) == 1) {
           this.flags.negative = true;
         }
         this.registers.PC += 2;
