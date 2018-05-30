@@ -118,15 +118,11 @@
         },
       LDA_IND_X: function() {
           this.log("LDA ($" + this.next_byte().toString(16) + "), X", this.registers.PC)
-          this.cycles -= 4;
           this.registers.A = this.fetch(this.next_byte() + this.registers.X);
-          this.registers.PC += 2;
       },
       LDA_ABS: function() {
           this.log("LDA $" + this.next_bytes(), this.registers.PC)
-          this.cycles -= 4;
           this.registers.A = this.fetch(this.next_bytes());
-          this.registers.PC += 3;
         },
       JMP: function() {
           let jmp_addr = this.next_bytes();
@@ -137,11 +133,14 @@
           let addr = this.fetch(this.next_byte());
           this.set(addr, this.registers.X)
           this.log("STX $" + addr, this.registers.PC);
-          this.cycles -= 3;
-          this.registers.PC += 2;
         },
       STX_ZP: function() {
           let addr = this.fetch(this.next_byte());
+          this.set(addr, this.registers.X)
+          this.log("STX $" + addr, this.registers.PC);
+        },
+      STX_ZP_Y: function() {
+          let addr = this.fetch(this.next_byte()) + this.registers.Y;
           this.set(addr, this.registers.X)
           this.log("STX $" + addr, this.registers.PC);
         },
@@ -149,29 +148,21 @@
           let addr3 = this.next_bytes();
           this.set(addr3, this.registers.X)
           this.log("STX $" + addr3, this.registers.PC);
-          this.cycles -= 4;
-          this.registers.PC += 3;
         },
       STY_ZP: function() {
           let addr1 = this.fetch(this.registers.PC+1);
           this.set(addr1, this.registers.X)
           this.log("STY #" + addr1, this.registers.PC);
-          this.cycles -= 2;
-          this.registers.PC += 2;
         },
       STA_ABS: function() {
           let sta_address = this.next_bytes();
           this.set(sta_address, this.registers.A);
           this.log("STA $" + sta_address, this.registers.PC);
-          this.cycles -= 4;
-          this.registers.PC += 3;
         },
       STA_IND_X: function() {
           let sta_address = this.fetch(this.next_byte() + this.registers.X)
           this.set(sta_address, this.registers.A);
           this.log("STA $" + sta_address, this.registers.PC);
-          this.cycles -= 4;
-          this.registers.PC += 2;
       },
       SEC: function() {
           this.log("SEC", this.registers.PC);
@@ -180,7 +171,6 @@
       BCS: function() {
           let bcs_addr = this.registers.PC+2 + this.next_byte();
           this.log("BCS " + (this.next_byte()+this.registers.PC+2).toString(16), this.registers.PC);
-          this.registers.PC += 2;
           if (this.flags.carry == true) {
             this.log("- Branch taken", bcs_addr);
             this.registers.PC = bcs_addr;
@@ -189,20 +179,14 @@
       CLC: function() {
           this.log("CLC", this.registers.PC);
           this.flags.carry = false;
-          this.cycles -= 2;
-          this.registers.PC++;
       },
       CLD: function() {
           this.log("CLD", this.registers.PC);
           this.flags.decimal_mode = false;
-          this.cycles -= 2;
-          this.registers.PC++;
       },
       CLV: function() {
           this.log("CLD", this.registers.PC);
           this.flags.overflow = false;
-          this.cycles -= 2;
-          this.registers.PC++;
       },
       PHA: function() {
         this.log("PHA", this.registers.PC);
@@ -227,9 +211,8 @@
         this.registers.PC++;
       },
       BCC: function() {
-          let bcc_addr = this.registers.PC+2 + this.next_byte();
+          let bcc_addr = this.registers.PC + this.next_byte();
           this.log("BCC " + (this.next_byte()+this.registers.PC+2).toString(16), this.registers.PC);
-          this.registers.PC += 2;
           if (this.flags.carry == false) {
             this.log("- Branch taken", bcc_addr);
             this.registers.PC = bcc_addr;
@@ -238,42 +221,27 @@
       LDA_IMM: function() {
         this.log("LDA #$" + this.next_byte(), this.registers.PC)
         this.registers.A = this.next_byte();
-        this.registers.PC += 2;
-        if (this.registers.A == 0) {
-          this.flags.zero = true;
-        }
       },
       LDA_ZP: function() {
           this.log("LDA $" + this.next_byte(), this.registers.PC)
-          this.cycles += 3;
           this.registers.A = this.fetch(this.registers.PC+1);
-          this.registers.PC += 2;
-          if (this.registers.A == 0) {
-            this.flags.zero = true;
-          }
       },
       BEQ: function() {
           this.log("BEQ " + (this.next_byte() + this.registers.PC).toString(16), this.registers.PC);
           if (this.flags.zero == true) {
-            this.registers.PC += 2 + this.next_byte();
-          } else {
-            this.registers.PC += 2;
+            this.registers.PC += this.next_byte();
           }
       },
       BNE: function() {
           this.log("BNE " + (this.next_byte() + this.registers.PC + 2).toString(16), this.registers.PC);
           if (this.flags.zero == false) {
-//            this.log("Branch taken", bvs_addr);
             this.registers.PC += 2 + this.next_byte();
-          } else {
-            this.registers.PC += 2;
           }
       },
       STA_ZP: function() {
           this.log("STA #" + this.next_byte(), this.registers.PC)
           this.cycles += 3;
           this.set(this.next_byte(), this.registers.A);
-          this.registers.PC = this.registers.PC+2;
       },
       BIT: function() {
           this.log("BIT #" + this.next_byte(), this.registers.PC)
@@ -282,7 +250,6 @@
           let s = ("00000000" + r).substr(-8)
           this.flags.negative = !!s[7];
           this.flags.overflow = !!s[6];
-          this.registers.PC += 2;
       },
       BVS: function() {
           let bvs_addr = this.registers.PC+2 + this.next_byte();
