@@ -80,7 +80,7 @@ optable[0xAE] = {
   op: opcodes['LDX_ABS']
 };
 
-optable[0xAE] = {
+optable[0xBE] = {
   name: 'LDX_ABS_Y',
   cycles: 4,
   bytes: 3,
@@ -510,7 +510,7 @@ optable[0x48] = {
   name: 'PHA',
   cycles: 3,
   bytes: 1,
-  op: opcodes['PHP']
+  op: opcodes['PHA']
 };
 
 optable[0x29] = {
@@ -690,6 +690,65 @@ optable[0xE8] = {
   op: opcodes["INX"],
   bytes: 1,
   cycles: 2
+};
+
+optable[0xA8] = {
+  name: 'TAY',
+  operand: "Y",
+  flags: ["UZ","UN"],
+  bytes: 1,
+  cycles: 2,
+  op: opcodes["TAY"]
+};
+
+optable[0xAA] = {
+  name: 'TAX',
+  operand: "X",
+  flags: ["UZ","UN"],
+  bytes: 1,
+  cycles: 2,
+  op: opcodes["TAX"]
+};
+
+optable[0x98] = {
+  name: "TYA",
+  operand: "A",
+  flags: ["UZ","UN"],
+  bytes: 1,
+  cycles: 2,
+  op: opcodes["TYA"]
+};
+
+optable[0x8A] = {
+  name: "TXA",
+  operand: "A",
+  flags: ["UZ","UN"],
+  bytes: 1,
+  cycles: 2,
+  op: opcodes["TXA"]
+};
+
+optable[0x9A] = {
+  name: "TXS",
+  bytes: 1,
+  cycles: 2,
+  op: opcodes["TXS"]
+};
+
+optable[0xBA] = {
+  name: "TSX",
+  bytes: 1,
+  cycles: 2,
+  op: opcodes["TSX"],
+  flags: ["UZ","UN"],
+  operand: "X"
+};
+
+optable[0x40] = {
+  name: "RTI",
+  bytes: 1,
+  cycles: 6,
+  op: opcodes["RTI"]
 };
 
 module.exports = optable;
