@@ -66,14 +66,24 @@ class CPU {
 
   }
 
+  set_flags(pflags) {
+        let t = ("00000000" + pflags.toString(2)).substr(-8)
+        this.flags.carry = ! t[0];
+        this.flags.zero = ! t[1];
+        this.flags.interrupt_disable = ! t[2];
+        this.flags.decimal_mode = ! t[3];
+        this.flags.break_command = ! t[4];
+        this.flags.overflow = ! t[6];
+        this.flags.negative = ! t[7];
+  }
+
   update_flags(flags, operand) {
 
 
     flags.forEach((flag) => {
       switch(flag) {
         case 'UN':
-          if (utility.bit(this.registers[operand], 7) == 1) {
-            console.log("updated negative flag");
+          if (utility.bit(this.registers[operand], 1) == 1) {
             this.flags.negative = true;
           }
         break;
@@ -112,7 +122,8 @@ class CPU {
          + " X: " + this.registers.X.toString(16)
          + " Y: " + this.registers.Y.toString(16)
          + " P: " + this.status_byte().toString(16)
-         + " SP: " + this.registers.SP.toString(16) + "]";
+         + " SP: " + this.registers.SP.toString(16)
+         + " CYC: " + (this.cycles % 400) + "]";
 
   }
 
@@ -149,11 +160,12 @@ class CPU {
 
       optable[opcode].op.bind(this).call();
       this.update_flags(optable[opcode].flags || [], optable[opcode].operand || "");
-      this.cycles -= optable[opcode].cycles;
-      if (!optable[opcode].extras || !optable[opcode].extras.includes("NO_JMP")) {
+
+      this.cycles += (optable[opcode].cycles + optable[opcode].bytes);
+
+      if (!optable[opcode].actions || !optable[opcode].actions.includes("NO_UPDATE_PC")) {
         this.registers.PC += optable[opcode].bytes;
       }
-//      process.exit();
 
     }
   }
@@ -178,7 +190,7 @@ class CPU {
     status.push(true)
     status.push(this.flags.overflow)
     status.push(this.flags.negative)
-    let binary_digits = status.map((s) => + s)
+    let binary_digits = status.map((s) => + s).reverse();
     let byte = parseInt(binary_digits.join(''), 2);
     return byte;
   }
