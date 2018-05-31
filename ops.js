@@ -16,71 +16,39 @@
         // then jump to subroutine location
         let j = this.next_bytes();
         this.log("JSR " + (j).toString(16), this.registers.PC);
-        let bytes = utility.split_byte(this.registers.PC+3);
+        let bytes = utility.split_byte((this.registers.PC+3) - 1);
         this.stack.push(bytes[0]);
         this.stack.push(bytes[1]);
-        this.cycles -= 6;
         this.registers.SP -= 2;
         this.registers.PC = j;
         },
         TSX: function() {
           this.log("TSX", this.registers.PC)
           this.registers.X = this.registers.SP;
-          this.cycles -= 2;
-
-          if (this.registers.X == 0) {
-            this.flags.zero = true;
-          }
-
-          if (utility.bit(this.registers.X, 7) == 1) {
-            this.flags.negative = true;
-          }
-
-          this.registers.PC++;
       }, 
       TXS: function() {
           this.log("TXS", this.registers.PC)
           this.registers.SP = this.registers.X;
-          this.cycles -= 2;
-          this.registers.PC++;
       },
       TYA: function() {
           this.log("TYA", this.registers.PC)
           this.registers.A = this.registers.Y;
-          this.cycles -= 2;
-          if (this.registers.A == 0) {
-            this.flags.zero = true;
-          }
-
-          if (utility.bit(this.registers.negative, 7) == 1) {
-            this.flags.negative = true;
-          }
-
-          this.registers.PC++;
       },
       TAY: function() {
           this.log("TAY", this.registers.PC)
           this.registers.Y = this.registers.A;
-          this.cycles -= 2;
-          this.registers.PC++;
       },
       TAX: function() {
           this.log("TAX", this.registers.PC)
           this.registers.X = this.registers.A;
-          this.cycles -= 2;
-          this.registers.PC++;
       },
       TXA: function() {
           this.log("TXA", this.registers.PC)
           this.registers.A = this.registers.X;
-          this.cycles -= 2;
-          this.registers.PC++;
       },
       INY: function() {
           this.log("INY", this.registers.PC)
           this.registers.Y++;
-          this.cycles -= 2;
-          this.registers.PC++;
       },
       DEY: function() {
           this.log("DEY", this.registers.PC)
@@ -91,22 +59,16 @@
       DEX: function() {
           this.log("DEY", this.registers.PC)
           this.registers.Y--;
-          this.cycles -= 2;
-          this.registers.PC++;
       },
       INX: function() {
           this.log("INX", this.registers.PC)
           this.registers.Y++;
-          this.cycles -= 2;
-          this.registers.PC++;
 
       },
       ROL_A: function() {
         /* partial */
         this.log("ROL A", this.registers.PC);
         this.registers.A << 1;
-        this.cycles -= 2;
-        this.registers.PC++;
       },
       LDX_IMM: function() {
           this.registers.X = this.next_byte();
@@ -174,6 +136,8 @@
           if (this.flags.carry == true) {
             this.log("- Branch taken", bcs_addr);
             this.registers.PC = bcs_addr;
+          } else {
+            this.registers.PC += 2;
           }
         },
       CLC: function() {
@@ -208,7 +172,6 @@
         this.flags.break_command = ! t[4];
         this.flags.overflow = ! t[6];
         this.flags.negative = ! t[7];
-        this.registers.PC++;
       },
       BCC: function() {
           let bcc_addr = this.registers.PC + this.next_byte();
@@ -216,6 +179,8 @@
           if (this.flags.carry == false) {
             this.log("- Branch taken", bcc_addr);
             this.registers.PC = bcc_addr;
+          } else {
+            this.registers.PC += 2;
           }
       },
       LDA_IMM: function() {
@@ -229,13 +194,17 @@
       BEQ: function() {
           this.log("BEQ " + (this.next_byte() + this.registers.PC).toString(16), this.registers.PC);
           if (this.flags.zero == true) {
-            this.registers.PC += this.next_byte();
+            this.registers.PC += 2 + this.next_byte();
+          } else {
+            this.registers.PC += 2;
           }
       },
       BNE: function() {
           this.log("BNE " + (this.next_byte() + this.registers.PC + 2).toString(16), this.registers.PC);
           if (this.flags.zero == false) {
             this.registers.PC += 2 + this.next_byte();
+          } else {
+            this.registers.PC += 2;
           }
       },
       STA_ZP: function() {
@@ -270,12 +239,13 @@
           }
       },
       BPL: function() {
-          let bpl_addr = this.registers.PC+2 + this.next_byte();
+          let bpl_addr = this.registers.PC + this.next_byte();
           this.log("BPL " + (this.next_byte()+this.registers.PC+2).toString(16), this.registers.PC);
-          this.registers.PC += 2;
           if (this.flags.negative == false) {
             this.log("- Branch taken", bpl_addr);
             this.registers.PC = bpl_addr;
+          } else {
+            this.registers.PC += 2;
           }
       },
       RTS: function() {
@@ -287,17 +257,13 @@
       SEI: function() {
         this.flags.interrupt_disable = true;
         this.log("SEI", this.registers.PC);
-        this.registers.PC++;
       },
       SED: function() {
         this.flags.decimal_mode = true;
         this.log("SED", this.registers.PC);
-        this.cycles -= 2;
-        this.registers.PC++;
       },
       PHP: function() {
         this.log("PHP", this.registers.PC);
-        this.registers.PC++;
         this.stack.push(this.status_byte());
         this.registers.SP--;
       },
@@ -312,20 +278,10 @@
         if (utility.bit(byte, 7) == 1) {
           this.flags.negative = true;
         }
-        this.cycles -= 4;
-        this.registers.PC++;
       },
       AND_IMM: function() {
         this.registers.A = this.registers.A & this.next_byte();
         this.log("AND #" + this.next_byte(), this.registers.PC);
-        this.cycles -= 2;
-        if (this.registers.A == 0) {
-          this.flags.zero = true;
-        }
-        if (utility.bit(this.registers.A, 7) == 1) {
-          this.flags.negative = true;
-        }
-        this.registers.PC += 2;
       },
       AND_ZP: function() {
         this.registers.A = this.registers.A & this.next_byte();
@@ -372,8 +328,6 @@
       SBC_IMM: function() {
         this.registers.A = this.registers.A - this.next_byte();
         this.log("BAD SBC #" + this.next_byte(), this.registers.PC);
-        this.cycles -= 2;
-        this.registers.PC += 2;
       },
       CMP_IMM: function() {
         this.log("CMP #" + this.next_byte(), this.registers.PC);
@@ -420,8 +374,6 @@
       LDY_IMM: function() {
           this.log("LDY #" + this.next_byte(), this.registers.PC)
           this.registers.Y = this.next_byte();
-          this.cycles -= 2;
-          this.registers.PC += 2;
       },
       BMI: function() {
         this.log("BMI " + this.next_byte(), this.registers.PC);

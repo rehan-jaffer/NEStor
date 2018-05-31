@@ -174,6 +174,22 @@ optable[0x38] = {
   op: opcodes['SEC'],
 };
 
+optable[0x78] = {
+  name: 'SEI',
+  cycles: 2,
+  bytes: 1,
+  flags: ['UI'],
+  op: opcodes['SEI']
+};
+
+optable[0xF8] = {
+  name: 'SED',
+  cycles: 2,
+  bytes: 1,
+  flags: ['UD'],
+  op: opcodes['SED']
+};
+
 optable[0x18] = {
   name: 'CLC',
   cycles: 2,
@@ -187,6 +203,7 @@ optable[0xD8] = {
   cycles: 2,
   bytes: 1,
   flags: ['CD'],
+  op: opcodes['CLD']
 };
 
 optable[0x58] = {
@@ -194,6 +211,7 @@ optable[0x58] = {
   cycles: 2,
   bytes: 1,
   flags: ['CI'],
+  op: opcodes['CLI']
 };
 
 optable[0xB8] = {
@@ -201,6 +219,7 @@ optable[0xB8] = {
   cycles: 2,
   bytes: 1,
   flags: ['CV'],
+  op: opcodes['CLV']
 };
 
 /* LDA opcodes */
@@ -284,7 +303,23 @@ optable[0x90] = {
   cycles: 2,
   bytes: 2,
   op: opcodes['BCC'],
-  actions: ["INCREMENT_CYCLES_IF_BRANCH","INCREMENT_CYCLES_IF_NEW_PAGE","BRANCH_UPDATE_PC"]
+  actions: ["INCREMENT_CYCLES_IF_BRANCH","INCREMENT_CYCLES_IF_NEW_PAGE","NO_UPDATE_PC"]
+};
+
+optable[0x50] = {
+  name: 'BVC',
+  cycles: 2,
+  bytes: 2,
+  op: opcodes['BVC'],
+  actions: ["INCREMENT_CYCLES_IF_BRANCH","INCREMENT_CYCLES_IF_NEW_PAGE","NO_UPDATE_PC"]
+};
+
+optable[0x10] = {
+  name: 'BPL',
+  cycles: 2,
+  bytes: 2,
+  op: opcodes['BPL'],
+  actions: ["INCREMENT_CYCLES_IF_BRANCH","INCREMENT_CYCLES_IF_NEW_PAGE","NO_UPDATE_PC"]
 };
 
 optable[0xB0] = {
@@ -292,7 +327,15 @@ optable[0xB0] = {
   cycles: 2,
   bytes: 2,
   op: opcodes['BCS'],
-  actions: ["INCREMENT_CYCLES_IF_BRANCH","INCREMENT_CYCLES_IF_NEW_PAGE","BRANCH_UPDATE_PC"]
+  actions: ["INCREMENT_CYCLES_IF_BRANCH","INCREMENT_CYCLES_IF_NEW_PAGE","NO_UPDATE_PC"]
+};
+
+optable[0x30] = {
+  name: 'BMI',
+  cycles: 2,
+  bytes: 2,
+  op: opcodes['BMI'],
+  actions: ["INCREMENT_CYCLES_IF_BRANCH","INCREMENT_CYCLES_IF_NEW_PAGE","NO_UPDATE_PC"]
 };
 
 optable[0xD0] = {
@@ -308,7 +351,7 @@ optable[0xF0] = {
   cycles: 2,
   bytes: 2,
   op: opcodes['BEQ'],
-  actions: ["INCREMENT_CYCLES_IF_BRANCH","INCREMENT_CYCLES_IF_NEW_PAGE","BRANCH_UPDATE_PC"]
+  actions: ["INCREMENT_CYCLES_IF_BRANCH","INCREMENT_CYCLES_IF_NEW_PAGE","NO_UPDATE_PC"]
 };
 
 optable[0x24] = {
@@ -378,13 +421,275 @@ optable[0x91] = {
   op: opcodes['STA_IND_Y']
 };
 
-optable[0x01] = {
+optable[0x09] = {
   name: 'ORA_IMM',
   cycles: 2,
   bytes: 2,
   operand: "A",
   flags: ['UZ','UN'],
   op: opcodes['ORA_IMM']
+};
+
+optable[0x05] = {
+  name: 'ORA_ZP',
+  cycles: 3,
+  bytes: 2,
+  operand: "A",
+  flags: ['UZ','UN'],
+  op: opcodes['ORA_IMM']
+};
+
+optable[0x15] = {
+  name: 'ORA_ZP_X',
+  cycles: 3,
+  bytes: 2,
+  operand: "A",
+  flags: ['UZ','UN'],
+  op: opcodes['ORA_ZP_X']
+};
+
+optable[0x0D] = {
+  name: 'ORA_ABS',
+  cycles: 4,
+  bytes: 3,
+  operand: "A",
+  flags: ['UZ','UN'],
+  op: opcodes['ORA_ABS']
+};
+
+optable[0x01] = {
+  name: 'ORA_IND_X',
+  cycles: 6,
+  bytes: 2,
+  operand: "A",
+  flags: ['UZ','UN'],
+  op: opcodes['ORA_IND_X']
+};
+
+optable[0x1D] = {
+  name: 'ORA_ABS_X',
+  cycles: 4,
+  bytes: 3,
+  operand: "A",
+  flags: ['UZ','UN'],
+  op: opcodes['ORA_ABS_X']
+};
+
+optable[0x19] = {
+  name: 'ORA_ABS_Y',
+  cycles: 4,
+  bytes: 3,
+  operand: "A",
+  flags: ['UZ','UN'],
+  op: opcodes['ORA_ABS_Y']
+};
+
+
+optable[0x08] = {
+  name: 'PHP',
+  cycles: 3,
+  bytes: 1,
+  op: opcodes['PHP']
+};
+
+optable[0x28] = {
+  name: 'PLP',
+  cycles: 4,
+  bytes: 1,
+  op: opcodes['PLP']
+};
+
+optable[0x68] = {
+  name: 'PLA',
+  cycles: 4,
+  bytes: 1,
+  op: opcodes['PLA']
+};
+
+optable[0x48] = {
+  name: 'PHA',
+  cycles: 3,
+  bytes: 1,
+  op: opcodes['PHP']
+};
+
+optable[0x29] = {
+  name: 'AND_IMM',
+  cycles: 2,
+  bytes: 2,
+  flags: ['UZ','UN'],
+  operand: "A",
+  op: opcodes['AND_IMM']
+};
+
+optable[0x25] = {
+  name: 'AND_ZP',
+  cycles: 3,
+  bytes: 2,
+  flags: ['UZ','UN'],
+  operand: "A",
+  op: opcodes['AND_ZP']
+};
+
+optable[0x35] = {
+  name: 'AND_ZP_X',
+  cycles: 4,
+  bytes: 2,
+  flags: ['UZ','UN'],
+  operand: "A",
+  op: opcodes['AND_ZP_X']
+};
+
+optable[0x39] = {
+  name: 'AND_ZP_Y',
+  cycles: 4,
+  bytes: 2,
+  flags: ['UZ','UN'],
+  operand: "A",
+  op: opcodes['AND_ZP']
+};
+
+optable[0xC0] = {
+  name: 'CPY_IMM',
+  bytes: 2,
+  cycles: 2,
+  op: opcodes['CPY_IMM']
+};
+
+optable[0xC4] = {
+  name: 'CPY_ZP',
+  bytes: 2,
+  cycles: 3,
+  op: opcodes['CPY_ZP']
+};
+
+optable[0xCC] = {
+  name: 'CPY_ABS',
+  bytes: 3,
+  cycles: 4,
+  op: opcodes['CPY_ABS']
+};
+
+optable[0xE0] = {
+  name: 'CPX_IMM',
+  bytes: 2,
+  cycles: 2,
+  op: opcodes['CPX_IMM']
+};
+
+optable[0xE4] = {
+  name: 'CPX_ZP',
+  bytes: 2,
+  cycles: 3,
+  op: opcodes['CPX_ZP']
+};
+
+optable[0xEC] = {
+  name: 'CPX_ABS',
+  bytes: 3,
+  cycles: 4,
+  op: opcodes['CPX_IMM']
+};
+
+optable[0xC9] = {
+  name: 'CMP_IMM',
+  bytes: 2,
+  cycles: 2,
+  op: opcodes['CMP_IMM']
+};
+
+optable[0xC5] = {
+  name: 'CMP_ZP',
+  bytes: 2,
+  cycles: 3,
+  op: opcodes['CMP_ZP']
+};
+
+optable[0xD5] = {
+  name: 'CMP_ZP_X',
+  bytes: 2,
+  cycles: 2,
+  op: opcodes['CMP_ZP_X']
+};
+
+optable[0xCD] = {
+  name: 'CMP_ABS',
+  bytes: 2,
+  cycles: 4,
+  op: opcodes['CMP_ABS']
+};
+
+optable[0x49] = {
+  name: 'EOR_IMM',
+  bytes: 2,
+  cycles: 2,
+  op: opcodes['EOR_IMM']
+};
+
+optable[0xE9] = {
+  name: 'SBC_IMM',
+  bytes: 2,
+  cycles: 2,
+  flags: ['UZ'],
+  operand: "A",
+  op: opcodes['SBC_IMM']
+};
+
+optable[0x84] = {
+  name: "STY_ZP",
+  bytes: 2,
+  cycles: 3,
+  op: opcodes['STY_ZP']
+};
+
+optable[0x94] = {
+  name: "STY_ZP_X",
+  bytes: 2,
+  cycles: 4,
+  op: opcodes['STY_ZP_X']
+};
+
+optable[0x8C] = {
+  name: "STY_ABS",
+  bytes: 2,
+  cycles: 3,
+  op: opcodes['STY_ABS']
+};
+
+optable[0xC8] = {
+  name: "INY",
+  operand: "Y",
+  flags: ["UZ","UN"],
+  op: opcodes["INY"],
+  bytes: 1,
+  cycles: 2
+};
+
+optable[0x88] = {
+  name: "DEY",
+  operand: "Y",
+  flags: ["UZ","UN"],
+  op: opcodes["DEY"],
+  bytes: 1,
+  cycles: 2
+};
+
+optable[0xCA] = {
+  name: "DEX",
+  operand: "X",
+  flags: ["UZ","UN"],
+  op: opcodes["DEX"],
+  bytes: 1,
+  cycles: 2
+};
+
+optable[0xE8] = {
+  name: "INX",
+  operand: "X",
+  flags: ["UZ","UN"],
+  op: opcodes["INX"],
+  bytes: 1,
+  cycles: 2
 };
 
 module.exports = optable;
