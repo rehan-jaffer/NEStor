@@ -53,8 +53,6 @@
       DEY: function() {
           this.log("DEY", this.registers.PC)
           this.registers.Y--;
-          this.cycles -= 2;
-          this.registers.PC++;
       },
       DEX: function() {
           this.log("DEY", this.registers.PC)
@@ -155,9 +153,7 @@
       PHA: function() {
         this.log("PHA", this.registers.PC);
         this.stack.push(this.registers.A);
-        this.cycles -= 3;
         this.registers.SP--;
-        this.registers.PC++;
       },
       PLP: function() {
         this.log("PLP", this.registers.PC);
@@ -254,6 +250,11 @@
          this.log("RTS " + ret_addr.toString(16), this.registers.PC)
          this.registers.PC = ret_addr;
       },
+      RTI: function() {
+        let status = this.stack.pop();
+        this.set_flags(status);
+        this.log("RTI", this.registers.PC);
+      },
       SEI: function() {
         this.flags.interrupt_disable = true;
         this.log("SEI", this.registers.PC);
@@ -284,16 +285,12 @@
         this.log("AND #" + this.next_byte(), this.registers.PC);
       },
       AND_ZP: function() {
-        this.registers.A = this.registers.A & this.next_byte();
+        this.registers.A = this.registers.A & this.fetch(this.next_byte());
         this.log("AND $" + this.next_byte(), this.registers.PC);
-        this.cycles -= 3;
-        if (this.registers.A == 0) {
-          this.flags.zero = true;
-        }
-        if (utility.bit(this.registers.A, 7) == 1) {
-          this.flags.negative = true;
-        }
-        this.registers.PC += 2;
+      },
+      AND_ZP_X: function() {
+        this.registers.A = this.registers.A & this.fetch(this.registers.X + this.next_byte());
+        this.log("AND $" + this.next_byte(), this.registers.PC);
       },
       AND_IND_X: function() {
         this.registers.A = this.registers.A & this.fetch(this.next_byte() + this.registers.X);
