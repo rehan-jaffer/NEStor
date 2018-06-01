@@ -144,7 +144,7 @@ class CPU {
     this.logger.log(cmd, this.registers.PC, this.debug_flags());
   }
 
-  execute() {
+  execute(instr_count = null) {
 
     this.log("Beginning execution at " + this.registers.PC);
     this.running = true;
@@ -166,6 +166,10 @@ class CPU {
       if (!optable[opcode].actions || !optable[opcode].actions.includes("NO_UPDATE_PC")) {
         this.registers.PC += optable[opcode].bytes;
       }
+
+      if (instr_count && --instr_count == 0) {
+        break;
+      } 
 
     }
   }
