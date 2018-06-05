@@ -83,16 +83,22 @@ class CPU {
     flags.forEach((flag) => {
       switch(flag) {
         case 'UN':
-          if (utility.bit(this.registers[operand], 1) == 1) {
+          let t = ("00000000" + this.registers[operand].toString(2)).substr(-8)
+          if (utility.bit(t, 0) == 1) {
+            console.log("OK")
             this.flags.negative = true;
+          } else {
+            this.flags.negative = false;
           }
         break;
         case 'UV':
-//            this.flags.overflow = true;
+            this.flags.overflow = true;
         break;
         case 'UZ':
           if (this.registers[operand] == 0) {
             this.flags.zero = true;
+          } else {
+            this.flags.zero = false;
           }
         break;
         case 'CC':
@@ -166,6 +172,8 @@ class CPU {
       if (!optable[opcode].actions || !optable[opcode].actions.includes("NO_UPDATE_PC")) {
         this.registers.PC += optable[opcode].bytes;
       }
+
+      this.registers.P = this.status_byte();
 
       if (instr_count && --instr_count == 0) {
         break;

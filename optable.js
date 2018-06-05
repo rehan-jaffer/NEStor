@@ -365,7 +365,7 @@ optable[0x24] = {
 optable[0x70] = {
   name: 'BVS',
   cycles: 2,
-  bytes: 2,
+  bytes: 0,
   op: opcodes['BVS'],
   actions: ['NO_UPDATE_PC']
 };

@@ -170,7 +170,7 @@
         this.flags.negative = ! t[7];
       },
       BCC: function() {
-          let bcc_addr = this.registers.PC + this.next_byte();
+          let bcc_addr = (this.registers.PC+2) + this.next_byte();
           this.log("BCC " + (this.next_byte()+this.registers.PC+2).toString(16), this.registers.PC);
           if (this.flags.carry == false) {
             this.log("- Branch taken", bcc_addr);
@@ -213,8 +213,10 @@
           let mem = this.next_byte();
           let r = (this.registers.A & mem).toString(2);
           let s = ("00000000" + r).substr(-8)
-          this.flags.negative = !!s[7];
-          this.flags.overflow = !!s[6];
+          this.flags.zero = (r == 0);
+          this.flags.negative = ! s[0];
+          this.flags.overflow = ! s[1];
+          console.log(this.flags);
       },
       BVS: function() {
           let bvs_addr = this.registers.PC+2 + this.next_byte();

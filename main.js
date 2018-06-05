@@ -30,15 +30,24 @@ class NES {
 
     let test_suite = new nestest;
     this.cpu.reset();
-    for(let x = 0; x < 50; x++) {
+    let running = true;
+    while (running) {
       this.cpu.execute(1);
       let test_line = test_suite["code"][this.cpu.registers.PC];
+      if (!test_line) {
+        console.log(this.cpu.registers.PC.toString(16));
+        process.exit();
+      }
       Object.entries(this.cpu.registers).forEach((register) => {
         if (parseInt(this.cpu.registers[register[0]]) == parseInt(test_line.flags[register[0]], 16)) {
 //          console.log(`Registers ${register[0]} match`);
         } else {
           console.log(`Registers ${register[0]} mismatch`);
           console.log(`Got ${this.cpu.registers[register[0]]}, expected ${parseInt(test_line.flags[register[0]],16)}`);
+          console.log(test_line.flags);
+          console.log(this.cpu.registers);
+          console.log(this.cpu.registers.PC.toString(16));
+          running = false;
         }
       });
     }
