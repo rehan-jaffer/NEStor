@@ -16,7 +16,7 @@
         // then jump to subroutine location
         let j = this.next_bytes();
         this.log("JSR " + (j).toString(16), this.registers.PC);
-        let bytes = utility.split_byte((this.registers.PC+3) - 1);
+        let bytes = utility.split_byte((this.registers.PC+3));
         this.stack.push(bytes[0]);
         this.stack.push(bytes[1]);
         this.registers.SP -= 2;
@@ -211,12 +211,12 @@
       BIT: function() {
           this.log("BIT #" + this.next_byte(), this.registers.PC)
           let mem = this.next_byte();
+          let mem_bits = ("00000000" + this.next_byte().toString(2)).substr(-8);
           let r = (this.registers.A & mem).toString(2);
           let s = ("00000000" + r).substr(-8)
-          this.flags.zero = (r == 0);
-          this.flags.negative = ! s[0];
-          this.flags.overflow = ! s[1];
-          console.log(this.flags);
+          this.flags.zero = (parseInt(r) == 0);
+          this.flags.negative = ! mem_bits[0];
+          this.flags.overflow = ! mem_bits[1];
       },
       BVS: function() {
           let bvs_addr = this.registers.PC+2 + this.next_byte();
@@ -237,7 +237,7 @@
           }
       },
       BPL: function() {
-          let bpl_addr = this.registers.PC + this.next_byte();
+          let bpl_addr = (this.registers.PC+2) + this.next_byte();
           this.log("BPL " + (this.next_byte()+this.registers.PC+2).toString(16), this.registers.PC);
           if (this.flags.negative == false) {
             this.log("- Branch taken", bpl_addr);
