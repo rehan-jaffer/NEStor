@@ -28,7 +28,7 @@ const VECTORS = {0xFFFC: [0x04,0xC0]};
 
 class CPU {
 
-  constructor() {
+  constructor(log_enabled=true) {
 
     this.ppu = new ppu;
     this.cycles = CYCLE_COUNT;
@@ -41,6 +41,8 @@ class CPU {
     this.cycles = 0;
 
     this.logger = (MODE == "browser") ? new logging.WebLogger : new logging.Logger;
+
+    this.logging = log_enabled;
 
     this.operations = operations;
     this.stack = new Array;
@@ -148,7 +150,8 @@ class CPU {
   }
 
   log(cmd, cruft) {
-    this.logger.log(cmd, this.registers.PC, this.debug_flags());
+    if (this.logging == true)
+      this.logger.log(cmd, this.registers.PC, this.debug_flags());
   }
 
   execute(instr_count = null) {
