@@ -19,6 +19,11 @@ class NES {
     });
 
   }
+
+  direct_load(code) {
+    this.cpu.direct_load(code);
+  }
+
   boot() {
     // initialize states
     //        this.cpu.initialize();
