@@ -77,7 +77,6 @@ class CPU {
 
   update_flags(flags, operand) {
 
-
     flags.forEach((flag) => {
       switch(flag) {
         case 'UN':
@@ -173,6 +172,7 @@ class CPU {
       }
 
       optable[opcode].op.bind(this).call();
+
       this.update_flags(optable[opcode].flags || [], optable[opcode].operand || "");
 
       this.cycles += (optable[opcode].cycles + optable[opcode].bytes);
@@ -184,7 +184,7 @@ class CPU {
       this.registers.P = this.status_byte();
 
       if (instr_count && --instr_count == 0) {
-        break;
+        this.running = false;
       } 
 
     }
