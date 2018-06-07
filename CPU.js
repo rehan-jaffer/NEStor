@@ -7,7 +7,7 @@ var optable = require('./optable.js');
 
 const CYCLE_COUNT = 1000;
 const LOGGING_ENABLED = true;
-const MODE = "node";
+const MODE = 'node';
 
 const MEM_INTERNAL_RAM_START = 0x0;
 const MEM_RAM_MIRROR_1_START = 0x0800;
@@ -40,13 +40,13 @@ class CPU {
     this.running = false;
     this.cycles = 0;
 
-    this.logger = (MODE == "browser") ? new logging.WebLogger : new logging.Logger;
+    this.logger = (MODE == 'browser') ? new logging.WebLogger : new logging.Logger;
 
     this.logging = log_enabled;
 
     this.operations = operations;
     this.stack = new Array;
-    this.log("CPU Initialized");
+    this.log('CPU Initialized');
 
   }
 
@@ -65,52 +65,52 @@ class CPU {
   }
 
   set_flags(pflags) {
-        let t = ("00000000" + pflags.toString(2)).substr(-8)
-        this.flags.carry = ! t[0];
-        this.flags.zero = ! t[1];
-        this.flags.interrupt_disable = ! t[2];
-        this.flags.decimal_mode = ! t[3];
-        this.flags.break_command = ! t[4];
-        this.flags.overflow = ! t[6];
-        this.flags.negative = ! t[7];
+    let t = ('00000000' + pflags.toString(2)).substr(-8);
+    this.flags.carry = ! t[0];
+    this.flags.zero = ! t[1];
+    this.flags.interrupt_disable = ! t[2];
+    this.flags.decimal_mode = ! t[3];
+    this.flags.break_command = ! t[4];
+    this.flags.overflow = ! t[6];
+    this.flags.negative = ! t[7];
   }
 
   update_flags(flags, operand) {
 
     flags.forEach((flag) => {
       switch(flag) {
-        case 'UN':
-          let t = ("00000000" + this.registers[operand].toString(2)).substr(-8)
-          if (utility.bit(t, 0) == 1) {
-            this.flags.negative = true;
-          } else {
-            this.flags.negative = false;
-          }
+      case 'UN':
+        let t = ('00000000' + this.registers[operand].toString(2)).substr(-8);
+        if (utility.bit(t, 0) == 1) {
+          this.flags.negative = true;
+        } else {
+          this.flags.negative = false;
+        }
         break;
-        case 'UV':
-            this.flags.overflow = true;
+      case 'UV':
+        this.flags.overflow = true;
         break;
-        case 'UZ':
-          if (this.registers[operand] == 0) {
-            this.flags.zero = true;
-          } else {
-            this.flags.zero = false;
-          }
+      case 'UZ':
+        if (this.registers[operand] == 0) {
+          this.flags.zero = true;
+        } else {
+          this.flags.zero = false;
+        }
         break;
-        case 'CC':
-          this.flags.carry = false;
+      case 'CC':
+        this.flags.carry = false;
         break;
-        case 'CD':
-          this.flags.decimal = false;
+      case 'CD':
+        this.flags.decimal = false;
         break;
-        case 'CI':
-          this.flags.interrupt_disable = false;
+      case 'CI':
+        this.flags.interrupt_disable = false;
         break;
-        case 'CV':
-          this.flags.overflow = false;
+      case 'CV':
+        this.flags.overflow = false;
         break;
       }
-    })
+    });
 
   }
 
@@ -126,12 +126,12 @@ class CPU {
 
   debug_flags() {
 
-    return "[A: " + this.registers.A.toString(16)
-         + " X: " + this.registers.X.toString(16)
-         + " Y: " + this.registers.Y.toString(16)
-         + " P: " + this.status_byte().toString(16)
-         + " SP: " + this.registers.SP.toString(16)
-         + " CYC: " + (this.cycles % 400) + "]";
+    return '[A: ' + this.registers.A.toString(16)
+         + ' X: ' + this.registers.X.toString(16)
+         + ' Y: ' + this.registers.Y.toString(16)
+         + ' P: ' + this.status_byte().toString(16)
+         + ' SP: ' + this.registers.SP.toString(16)
+         + ' CYC: ' + (this.cycles % 400) + ']';
 
   }
 
@@ -155,7 +155,7 @@ class CPU {
 
   execute(instr_count = null) {
 
-    this.log("Beginning execution at " + this.registers.PC);
+    this.log('Beginning execution at ' + this.registers.PC);
     this.running = true;
 
     while(this.running == true) {
@@ -166,18 +166,18 @@ class CPU {
         break;
       }
 
-      if (typeof optable[opcode] === "undefined" || typeof optable[opcode].op === "undefined") {
-        console.log("Unimplemented opcode: " + opcode.toString(16) + " at " + this.registers.PC.toString(16));
+      if (typeof optable[opcode] === 'undefined' || typeof optable[opcode].op === 'undefined') {
+        console.log('Unimplemented opcode: ' + opcode.toString(16) + ' at ' + this.registers.PC.toString(16));
         process.exit();
       }
 
       optable[opcode].op.bind(this).call();
 
-      this.update_flags(optable[opcode].flags || [], optable[opcode].operand || "");
+      this.update_flags(optable[opcode].flags || [], optable[opcode].operand || '');
 
       this.cycles += (optable[opcode].cycles + optable[opcode].bytes);
 
-      if (!optable[opcode].actions || !optable[opcode].actions.includes("NO_UPDATE_PC")) {
+      if (!optable[opcode].actions || !optable[opcode].actions.includes('NO_UPDATE_PC')) {
         this.registers.PC += optable[opcode].bytes;
       }
 
@@ -202,14 +202,14 @@ class CPU {
   status_byte() {
 
     let status = new Array;
-    status.push(this.flags.carry)
-    status.push(this.flags.zero)
-    status.push(this.flags.interrupt_disable)
-    status.push(this.flags.decimal_mode)
-    status.push(this.flags.break_command)
-    status.push(true)
-    status.push(this.flags.overflow)
-    status.push(this.flags.negative)
+    status.push(this.flags.carry);
+    status.push(this.flags.zero);
+    status.push(this.flags.interrupt_disable);
+    status.push(this.flags.decimal_mode);
+    status.push(this.flags.break_command);
+    status.push(true);
+    status.push(this.flags.overflow);
+    status.push(this.flags.negative);
     let binary_digits = status.map((s) => + s).reverse();
     let byte = parseInt(binary_digits.join(''), 2);
     return byte;
@@ -237,43 +237,43 @@ class CPU {
 
   }
 
-   read(addr, n=1) {
+  read(addr, n=1) {
 
     if (addr < 0) {
-      throw "requested negative memory address";
+      throw 'requested negative memory address';
     }
 
     switch (true) {
-      case (addr < MEM_RAM_MIRROR_1_START):
-          this.ram.slice(addr, n);
-        break;
-      case (addr < MEM_RAM_MIRROR_2_START):
-          this.ram.slice(addr, n);
-        break;
-      case (addr < MEM_RAM_MIRROR_3_START):
-          this.ram.slice(addr, n);
+    case (addr < MEM_RAM_MIRROR_1_START):
+      this.ram.slice(addr, n);
       break;
-      case (addr < MEM_PPU_REGISTERS_START):
-        this.ram.slice(addr, n);
+    case (addr < MEM_RAM_MIRROR_2_START):
+      this.ram.slice(addr, n);
       break;
-      case (addr < MEM_PPU_MIRROR_1_START):
-        // do ppu stuff
-      case (addr < MEM_APU_REGISTERS_START):
-        // do ppu stuff, mirrored
+    case (addr < MEM_RAM_MIRROR_3_START):
+      this.ram.slice(addr, n);
       break;
-      case (addr < MEM_TEST_MODE_START):
-        // do apu stuff
+    case (addr < MEM_PPU_REGISTERS_START):
+      this.ram.slice(addr, n);
       break;
-      case (addr < MEM_ROM_START):
-        // test mode stuff
+    case (addr < MEM_PPU_MIRROR_1_START):
+      // do ppu stuff
+    case (addr < MEM_APU_REGISTERS_START):
+      // do ppu stuff, mirrored
       break;
-      case (addr < MEM_END):
-        if (addr >= 0xC000 && addr < 0xFFFA) {
-          return this.rom[(addr-0xC000)];
-        }
+    case (addr < MEM_TEST_MODE_START):
+      // do apu stuff
+      break;
+    case (addr < MEM_ROM_START):
+      // test mode stuff
+      break;
+    case (addr < MEM_END):
+      if (addr >= 0xC000 && addr < 0xFFFA) {
+        return this.rom[(addr-0xC000)];
+      }
       break;
     }
-   }
+  }
 
   fetch(addr) {
     if(addr >= 0 && addr <= 0x7FF) {
@@ -295,16 +295,16 @@ class CPU {
       // NES PPU registers
       let self = this;
       let PPU_OPS = {0x2000: () => { }, // ppu ctrl
-       0x2001: () => { }, // ppu mask
-       0x2002: () => { return self.ppu.status }, // ppu status
-       0x2003: () => { }, // oama addr
-       0x2004: () => { }, // ppu scroll
-       0x2005: () => { }, // ppu addr
-       0x2006: () => { }, // ppu data
-       0x2007: () => { }, // oam dma
-       0x4014: () => { }}
-       console.log(PPU_OPS[addr]());
-       return PPU_OPS[addr]();
+        0x2001: () => { }, // ppu mask
+        0x2002: () => { return self.ppu.status; }, // ppu status
+        0x2003: () => { }, // oama addr
+        0x2004: () => { }, // ppu scroll
+        0x2005: () => { }, // ppu addr
+        0x2006: () => { }, // ppu data
+        0x2007: () => { }, // oam dma
+        0x4014: () => { }};
+      console.log(PPU_OPS[addr]());
+      return PPU_OPS[addr]();
     } else if (addr >= 0x2008 && addr < 0x3FFF) {
       // Mirrors of $2000-2007
     } else if (addr >= 0x4000 && addr < 0x4017) {
@@ -316,11 +316,11 @@ class CPU {
         return this.rom[(addr-0xC000)];
       }
 
-        if (addr == 0xFFFC) {
-          return 0x04;
-        } else if (addr = 0xFFFD) {
-          return 0xC0;
-        }
+      if (addr == 0xFFFC) {
+        return 0x04;
+      } else if (addr = 0xFFFD) {
+        return 0xC0;
+      }
     }
 
   }
