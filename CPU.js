@@ -40,11 +40,7 @@ class CPU {
     this.running = false;
     this.cycles = 0;
 
-    if (MODE == "browser") {
-      this.logger = new logging.WebLogger;
-    } else {
-      this.logger = new logging.Logger;
-    }
+    this.logger = (MODE == "browser") ? new logging.WebLogger : new logging.Logger;
 
     this.operations = operations;
     this.stack = new Array;
@@ -85,7 +81,6 @@ class CPU {
         case 'UN':
           let t = ("00000000" + this.registers[operand].toString(2)).substr(-8)
           if (utility.bit(t, 0) == 1) {
-            console.log("OK")
             this.flags.negative = true;
           } else {
             this.flags.negative = false;
@@ -115,6 +110,12 @@ class CPU {
         break;
       }
     })
+
+  }
+
+  direct_load(code) {
+
+    this.rom = code;
 
   }
 
@@ -158,6 +159,10 @@ class CPU {
     while(this.running == true) {
 
       let opcode = this.fetch(this.registers.PC);
+
+      if (!opcode) {
+        break;
+      }
 
       if (typeof optable[opcode] === "undefined" || typeof optable[opcode].op === "undefined") {
         console.log("Unimplemented opcode: " + opcode.toString(16) + " at " + this.registers.PC.toString(16));
@@ -230,6 +235,11 @@ class CPU {
   }
 
    read(addr, n=1) {
+
+    if (addr < 0) {
+      throw "requested negative memory address";
+    }
+
     switch (true) {
       case (addr < MEM_RAM_MIRROR_1_START):
           this.ram.slice(addr, n);
