@@ -48,7 +48,8 @@ optable[0x60] = {
   bytes: 1,
   flags: [],
   name: 'RTS',
-  op: opcodes['RTS']
+  op: opcodes['RTS'],
+  actions: ['NO_UPDATE_PC']
 };
 
 /* LDX opcodes */
@@ -365,7 +366,7 @@ optable[0x24] = {
 optable[0x70] = {
   name: 'BVS',
   cycles: 2,
-  bytes: 0,
+  bytes: 2,
   op: opcodes['BVS'],
   actions: ['NO_UPDATE_PC']
 };
@@ -749,6 +750,55 @@ optable[0x40] = {
   bytes: 1,
   cycles: 6,
   op: opcodes["RTI"]
+};
+
+optable[0x4A] = {
+  name: "LSR_A",
+  bytes: 1,
+  cycles: 2,
+  op: opcodes['LSR_A']
+};
+
+optable[0x0A] = {
+  name: "ASL_A",
+  bytes: 1,
+  cycles: 2,
+  op: opcodes['ASL_A']
+};
+
+optable[0x1E] = {
+  name: "ASL_ABS_X",
+  bytes: 3,
+  cycles: 7,
+  op: opcodes['ASL_ABS_X']
+};
+
+optable[0x6A] = {
+  name: "ROR_A",
+  bytes: 1,
+  cycles: 2,
+  op: opcodes["ROR_A"]
+};
+
+optable[0x2A] = {
+  name: "ROL_A",
+  bytes: 1,
+  cycles: 2,
+  op: opcodes["ROL_A"]
+};
+
+optable[0x21] = {
+  name: "AND_IND_X",
+  bytes: 2,
+  cycles: 6,
+  op: opcodes["AND_IND_X"]
+};
+
+optable[0x41] = {
+  name: "EOR_IND_X",
+  bytes: 2,
+  cycles: 6,
+  op: opcodes["EOR_IND_X"]
 };
 
 module.exports = optable;

@@ -304,7 +304,6 @@
         if (utility.bit(this.registers.A, 7) == 1) {
           this.flags.negative = true;
         }
-        this.registers.PC += 2;
       },
       AND_IND_Y: function() {
         this.registers.A = this.registers.A & this.fetch(this.next_byte() + this.registers.Y);
@@ -316,7 +315,6 @@
         if (utility.bit(this.registers.A, 7) == 1) {
           this.flags.negative = true;
         }
-        this.registers.PC += 2;
       },
       ADC_IMM: function() {
         this.registers.A = this.registers.A + this.next_byte();
@@ -404,7 +402,6 @@
         if (utility.bit(this.registers.A, 7) == 1) {
           this.flags.negative = true;
         }
-        this.registers.PC += 2;
       }, 
       ORA_IND_X: function() {
         this.log("ORA (" + this.fetch(this.next_byte()) + "), X", this.registers.PC);
@@ -416,7 +413,6 @@
         if (utility.bit(this.registers.A, 7) == 1) {
           this.flags.negative = true;
         }
-        this.registers.PC += 2;
       },
       ORA_IND_Y: function() {
         this.log("ORA (" + this.fetch(this.next_byte()) + "), Y", this.registers.PC);
@@ -428,7 +424,6 @@
         if (utility.bit(this.registers.A, 7) == 1) {
           this.flags.negative = true;
         }
-        this.registers.PC += 2;
       },
       EOR_IMM: function() {
         this.registers.A = this.registers.A ^ this.next_byte();
@@ -439,7 +434,6 @@
         if (this.registers.A.toString(2)[7] == 1) {
           this.flags.negative = true;
         }
-        this.registers.PC += 2;
       },
       EOR_ZP: function() {
         this.registers.A = this.registers.A ^ this.next_byte();
@@ -498,14 +492,6 @@
       },
       EOR_IND_X: function() {
         this.registers.A = this.registers.A ^ (this.fetch(this.next_bytes()) + this.registers.X);
-        this.cycles -= 4;
-        if (this.registers.A == 0) {
-          this.flags.zero = true;
-        }
-        if (utility.bit(this.registers.A, 7) == 1) {
-          this.flags.negative = true;
-        }
-        this.registers.PC += 3;
       },
       EOR_IND_Y: function() {
         this.registers.A = this.registers.A ^ (this.fetch(this.next_bytes()) + this.registers.Y);
@@ -520,21 +506,22 @@
       },
       LSR_A: function() {
         this.log("LSR A", this.registers.PC);
-        this.cycles -= 2;
         this.registers.A >>> 1;
-        this.registers.PC++;
       },
       ASL_A: function() {
-        this.log("LSR A", this.registers.PC);
-        this.cycles -= 2;
+        this.log("ASL A", this.registers.PC);
         this.registers.A *= 2;
-        this.registers.PC++;
       },
       ROR_A: function() {
         this.log("ROR A", this.registers.PC);
         this.cycles -= 2;
         this.registers.A >> 1;
-        this.registers.PC++;
+      },
+      ASL_ABS_X: function() {
+        this.log("ASL #$", this.registers.PC);
+        this.cycles -= 2;
+        let byte_shift = this.fetch(this.next_bytes() + this.registers.X);
+        this.set(this.next_bytes() + this.registers.X, byte_shift);
       }
 };
 
