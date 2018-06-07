@@ -1,1 +1,1 @@
-{"code": [162, 101, 234], "registers": {"A": 0, "X": 101, "Y": 0, "P": 0, "SP": 253 }}
+{"name": "LDX Accumulator mode test", "code": [162, 101, 234], "registers": {"A": 0, "X": 101, "Y": 0, "P": 0, "SP": 253 }}
