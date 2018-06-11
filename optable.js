@@ -27,7 +27,7 @@ optable[0x69] = {
 
 optable[0x65] = {
   cycles: 3,
-  bytes: 3,
+  bytes: 2,
   operand: "A",
   flags: ['UC','UZ','UV','UN'],
   name: 'ADC_ZP',
@@ -437,7 +437,7 @@ optable[0x05] = {
   bytes: 2,
   operand: "A",
   flags: ['UZ','UN'],
-  op: opcodes['ORA_IMM']
+  op: opcodes['ORA_ZP']
 };
 
 optable[0x15] = {
@@ -620,11 +620,25 @@ optable[0xCD] = {
   op: opcodes['CMP_ABS']
 };
 
+optable[0xC1] = {
+  name: 'CMP_IND_X',
+  bytes: 2,
+  cycles: 4,
+  op: opcodes['CMP_IND_X']
+};
+
 optable[0x49] = {
   name: 'EOR_IMM',
   bytes: 2,
   cycles: 2,
   op: opcodes['EOR_IMM']
+};
+
+optable[0x45] = {
+  name: 'EOR_ZP',
+  bytes: 2,
+  cycles: 3,
+  op: opcodes['EOR_ZP']
 };
 
 optable[0xE9] = {
@@ -799,6 +813,20 @@ optable[0x41] = {
   bytes: 2,
   cycles: 6,
   op: opcodes["EOR_IND_X"]
+};
+
+optable[0x61] = {
+  name: "ADC_IND_X",
+  bytes: 2,
+  cycles: 6,
+  op: opcodes["ADC_IND_X"]
+};
+
+optable[0xE1] = {
+  name: "SBC_IND_X",
+  bytes: 2,
+  cycles: 6,
+  op: opcodes["SBC_IND_X"]
 };
 
 module.exports = optable;

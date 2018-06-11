@@ -72,6 +72,10 @@ var operations = {
     this.registers.X = this.next_byte();
     this.log('LDX #$' + this.next_byte(), this.registers.PC);
   },
+  LDX_ZP: function() {
+    this.registers.X = this.fetch(this.next_byte());
+    this.log('LDX #$' + this.next_byte(), this.registers.PC);
+  },
   LDX_ABS: function() {
     this.registers.X = this.fetch(this.next_bytes());
     this.log('LDX ' + this.next_bytes(), this.registers.PC);
@@ -320,16 +324,24 @@ var operations = {
     this.registers.A = this.registers.A + this.next_byte();
     this.log('BAD ADC #' + this.next_byte(), this.registers.PC);
   },
+  ADC_ZP: function() {
+    this.registers.A = this.registers.A + this.fetch(this.next_byte());
+    this.log('BAD ADC #' + this.next_byte(), this.registers.PC);
+  },
   ADC_IND_X: function() {
-
+    this.registers.A = this.fetch(this.registers.X + this.next_byte()) + this.registers.A;
+    this.log('BAD ADC #' + this.next_byte(), this.registers.PC);
   },
   SBC_IMM: function() {
     this.registers.A = this.registers.A - this.next_byte();
     this.log('BAD SBC #' + this.next_byte(), this.registers.PC);
   },
+  SBC_IND_X: function() {
+    this.registers.A = this.registers.A - this.fetch(this.registers.X + this.next_byte());
+    this.log('BAD SBC #' + this.next_byte(), this.registers.PC);
+  },
   CMP_IMM: function() {
     this.log('CMP #' + this.next_byte(), this.registers.PC);
-    this.cycles -= 2;
     if (this.registers.A >= this.next_byte()) {
       this.flags.carry = true;
     } else if (this.registers.A == this.flags.zero) {
@@ -337,7 +349,28 @@ var operations = {
     } else if ((this.registers.A).toString(2)[7] == 1) {
       this.flags.negative = true;
     }
-    this.registers.PC += 2;
+  },
+  CMP_ZP: function() {
+    this.log('CMP #' + this.next_byte(), this.registers.PC);
+    if (this.registers.A >= this.fetch(this.next_byte())) {
+      this.flags.carry = true;
+    } else if (this.registers.A == this.flags.zero) {
+      this.flags.zero = true;
+    } else if (utility.bit(this.registers.A, 1) == 1) {
+      this.flags.negative = true;
+    }
+  },
+  CMP_IND_X: function() {
+    let c = this.fetch(this.next_byte() + this.registers.X);
+    this.log("CMP #" + this.next_byte(), this.registers.PC);
+    if (this.registers.A >= c) {
+      this.flags.carry = true;
+    } else if (this.registers.A == c) {
+      this.flags.zero = true;
+    }
+    if (utility.bit(this.registers.A, 1) == 1) {
+      this.flags.negative = true;
+    }
   },
   CPY_IMM: function() {
     this.log('CPY #' + this.next_byte(), this.registers.PC);
@@ -373,6 +406,10 @@ var operations = {
     this.log('LDY #' + this.next_byte(), this.registers.PC);
     this.registers.Y = this.next_byte();
   },
+  LDY_ZP: function() {
+    this.log('LDY #' + this.next_byte(), this.registers.PC);
+    this.registers.Y = this.fetch(this.next_byte());
+  },
   BMI: function() {
     this.log('BMI ' + this.next_byte(), this.registers.PC);
     if (this.flags.negative == true) {
@@ -384,14 +421,10 @@ var operations = {
   ORA_IMM: function() {
     this.log('ORA ' + this.next_byte(), this.registers.PC);
     this.registers.A = this.registers.A | this.next_byte();
-    this.cycles -= 2;
-    if (this.registers.A == 0) {
-      this.flags.zero = true;
-    }
-    if (utility.bit(this.registers.A, 7) == 1) {
-      this.flags.negative = true;
-    }
-    this.registers.PC += 2;
+  },
+  ORA_ZP: function() {
+    this.registers.A = this.registers.A | this.fetch(this.next_byte());
+    this.log('ORA ' + this.next_byte(), this.registers.PC);
   },
   ORA_ABS_X: function() {
     this.log('ORA (' + this.next_bytes() + '), X', this.registers.PC);
@@ -437,15 +470,7 @@ var operations = {
     }
   },
   EOR_ZP: function() {
-    this.registers.A = this.registers.A ^ this.next_byte();
-    this.cycles -= 3;
-    if (this.registers.A == 0) {
-      this.flags.zero = true;
-    }
-    if (utility.bit(this.registers.A.toString, 7) == 1) {
-      this.flags.negative = true;
-    }
-    this.registers.PC += 2;
+    this.registers.A = this.registers.A ^ this.fetch(this.next_byte());
   },
   EOR_ZP_X: function() {
     this.registers.A = this.registers.A ^ this.fetch(this.next_byte() + this.registers.X);
