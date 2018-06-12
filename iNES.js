@@ -65,12 +65,14 @@ class ROM {
       console.log("Error parsing iNES header");
       return false;
     }
+    const CHR_MULTIPLE_SIZE = 8192;
     this.prg_r1_size = this.rom[PRG_ROM_SIZE_INDEX];
     this.chr_size = this.rom[CHR_ROM_SIZE_INDEX];
-    const ROM_SIZE = ROM_MULTIPLE_SIZE*this.prg_r1_size;
-    // this.prg_rom = new Uint8Array(ROM_SIZE);
-    // this.rom.copy(this.prg_rom, 0, PRG_ROM_START_INDEX, ROM_SIZE);
-    this.prg_rom = new Uint8Array(this.rom_buffer.slice(PRG_ROM_START_INDEX, ROM_SIZE));
+    const PRG_ROM_SIZE = ROM_MULTIPLE_SIZE*this.prg_r1_size;
+    const CHR_ROM_SIZE = CHR_MULTIPLE_SIZE * this.chr_size
+    const CHR_ROM_START_INDEX = PRG_ROM_START_INDEX + PRG_ROM_SIZE;
+    this.prg_rom = new Uint8Array(this.rom_buffer.slice(PRG_ROM_START_INDEX, PRG_ROM_START_INDEX + PRG_ROM_SIZE));
+    this.chr_rom = new Uint8Array(this.rom_buffer.slice(CHR_ROM_START_INDEX, CHR_ROM_START_INDEX + CHR_ROM_SIZE));
     return true
   }
 
