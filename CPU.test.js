@@ -1,24 +1,29 @@
 var cpu = require('./CPU.js');
+const FLAGS_LIST = ["carry", "zero", "interrupt_disable", "decimal_mode", "break_command", "overflow", "negative"];
 
 describe("CPU initialization", () => {
 
-  let c = new cpu;
+  let c = new cpu(false);
 
   it("It initializes itself with a stack", () => {
     expect(c.stack).toEqual([]);
   });
 
   it("Sets up the appropriate flags", () => {
-    ['break_command', 'carry','negative','overflow','interupt_disable','decimal_mode'].forEach((flag) => {
+    FLAGS_LIST.forEach((flag) => {
       expect(c.flags[flag]).not.toBeNull();
     });
   });
 
 });
 
+describe("CPU logging functionality", () => {
+  
+});
+
 describe("CPU reset", () => {
 
-  let c = new cpu;
+  let c = new cpu(false);
   c.reset();
 
   it("sets the initial stack pointer to 0xfd", () => {
@@ -37,11 +42,38 @@ describe("CPU reset", () => {
     expect(c.registers.Y).toEqual(0);
   });
 
-  it("sets the initial flags appropriately (via flags object)", () => {
-    expect(["carry", "zero", "interrupt_disable", "decimal_mode", "break_command", "overflow", "negative"].map((flag) => {
+  it("sets the initial flags appropriately (test via flags object)", () => {
+    expect(FLAGS_LIST.map((flag) => {
       return c.flags[flag];
     })).toEqual([false, false, true, false, false, false, false]);
   });
 
+  it("sets the initial flags appropriately (test via status byte)", () => {
+    expect(c.status_byte()).toEqual(0x24);
+  });
+
+
+});
+
+describe("CPU status_byte() behaviour", () => {
+
+  let c = new cpu(false);
+  beforeEach(() => {
+    c.reset();
+    FLAGS_LIST.forEach((flag) => {
+      c.flags[flag] = false;
+    });
+  });
+
+  it("returns 32 for all flags set to false (bit 5 is always set to 1)", () => {
+    expect(c.status_byte()).toEqual(32);
+  });
+
+  it("returns 255 for all flags set to true", () => {
+    FLAGS_LIST.forEach((flag) => {
+      c.flags[flag] = true;
+    });
+    expect(c.status_byte()).toEqual(255);
+  });
 
 });
