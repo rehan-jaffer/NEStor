@@ -166,8 +166,12 @@ class CPU {
       let opcode = this.fetch(this.registers.PC);
 
       if (!opcode) {
+        /* we've reached the end of execution, here be dragons */
         break;
       }
+
+      /* Debugging code, causes the unimplemented opcode to be written out and the program
+         to bail. Useful during development. */
 
       if (
         typeof optable[opcode] === "undefined" ||
@@ -214,18 +218,19 @@ class CPU {
   }
 
   status_byte() {
-    let status = new Array();
-    status.push(this.flags.carry);
-    status.push(this.flags.zero);
-    status.push(this.flags.interrupt_disable);
-    status.push(this.flags.decimal_mode);
-    status.push(this.flags.break_command);
-    status.push(true);
-    status.push(this.flags.overflow);
-    status.push(this.flags.negative);
-    let binary_digits = status.map(s => +s).reverse();
-    let byte = parseInt(binary_digits.join(""), 2);
-    return byte;
+    let status = [
+      this.flags.carry,
+      this.flags.zero,
+      this.flags.interrupt_disable,
+      this.flags.decimal_mode,
+      this.flags.break_command,
+      true,
+      this.flags.overflow,
+      this.flags.negative
+    ]
+      .map(s => +s)
+      .reverse();
+    return parseInt(status.join(""), 2);
   }
 
   reset() {
