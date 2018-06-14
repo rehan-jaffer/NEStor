@@ -12,32 +12,35 @@
 
 class PPU {
   constructor() {
-    this.registers = { ppu_ctrl: 0, ppu_mask: 0, ppu_status: 0, oam_addr: 0, oamdata: 0, ppu_scroll: 0, ppu_addr: 0, ppu_data: 0, oam_dma: 0 };
+    this.registers = {
+      ppu_ctrl: 0,
+      ppu_mask: 0,
+      ppu_status: 0,
+      oam_addr: 0,
+      oamdata: 0,
+      ppu_scroll: 0,
+      ppu_addr: 0,
+      ppu_data: 0,
+      oam_dma: 0
+    };
     this.tiles = [];
   }
   load_rom(rom) {
     this.rom = rom.chr_rom;
   }
-  dump_tables() {
-
+  get_tiles() {
     let rom = this.rom;
     let tables = [];
-    let chunk = 2;
 
-    for (let i = 0, j=rom.length;i<j;i+=chunk) {
-      tables.push(rom.slice(i, i+chunk));
-    }
-
-    for (let x = 0; x<tables.length; x++) {
-      for (let y = 0; y < 2; y++) {
-        console.log(("00000000" + tables[x][y].toString(2)).substr(-8));
+    for (let i = 0; i < rom.length; i += 16) {
+      let chunk = rom.slice(i, i + 16);
+      let chunk_array = [];
+      for (let j = 0; j < 16; j += 2) {
+        chunk_array.push(chunk.slice(j, j + 2));
       }
-      console.log("");
+      this.tiles.push(chunk_array);
     }
-
   }
 }
-
-
 
 module.exports = PPU;
