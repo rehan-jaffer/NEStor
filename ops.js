@@ -14,13 +14,13 @@ var operations = {
   JSR_ABS: function() {
     // push address of next operation onto the stack
     // then jump to subroutine location
-    let j = this.next_bytes();
+    let j = (this.registers.PC+3)-1;
     this.log('JSR ' + (j).toString(16), this.registers.PC);
-    let bytes = utility.split_byte((this.registers.PC+3));
+    let bytes = utility.split_byte(j.toString(16));
     this.stack.push(bytes[0]);
     this.stack.push(bytes[1]);
     this.registers.SP -= 2;
-    this.registers.PC = j;
+    this.registers.PC = this.next_bytes();
   },
   TSX: function() {
     this.log('TSX', this.registers.PC);
@@ -312,29 +312,22 @@ var operations = {
   AND_IND_Y: function() {
     this.registers.A = this.registers.A & this.fetch(this.next_byte() + this.registers.Y);
     this.log('AND (' + this.next_byte() + '), X', this.registers.PC);
-    this.cycles -= 5;
-    if (this.registers.A == 0) {
-      this.flags.zero = true;
-    }
-    if (utility.bit(this.registers.A, 7) == 1) {
-      this.flags.negative = true;
-    }
   },
   ADC_IMM: function() {
-    this.registers.A = this.registers.A + this.next_byte();
-    this.log('BAD ADC #' + this.next_byte(), this.registers.PC);
+    this.registers.A = this.registers.A + this.next_byte() + this.flags.carry.toInteger();
+    this.log('ADC #' + this.next_byte(), this.registers.PC);
   },
   ADC_ZP: function() {
-    this.registers.A = this.registers.A + this.fetch(this.next_byte());
-    this.log('BAD ADC #' + this.next_byte(), this.registers.PC);
+    this.registers.A = this.registers.A + this.fetch(this.next_byte()) + this.flags.carry.toInteger();
+    this.log('ADC #' + this.next_byte(), this.registers.PC);
   },
   ADC_IND_X: function() {
-    this.registers.A = this.fetch(this.registers.X + this.next_byte()) + this.registers.A;
-    this.log('BAD ADC #' + this.next_byte(), this.registers.PC);
+    this.registers.A = this.fetch(this.registers.X + this.next_byte()) + this.registers.A + this.flags.carry.toInteger();
+    this.log('ADC #' + this.next_byte(), this.registers.PC);
   },
   SBC_IMM: function() {
     this.registers.A = this.registers.A - this.next_byte();
-    this.log('BAD SBC #' + this.next_byte(), this.registers.PC);
+    this.log('SBC #' + this.next_byte(), this.registers.PC);
   },
   SBC_IND_X: function() {
     this.registers.A = this.registers.A - this.fetch(this.registers.X + this.next_byte());
