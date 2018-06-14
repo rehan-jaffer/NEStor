@@ -1,4 +1,4 @@
-const utility = require('./utility');
+const utility = require('../utility.js');
 
 describe("utility.merge_bytes()", () => {
   it('merges two non-null bytes', () => {
