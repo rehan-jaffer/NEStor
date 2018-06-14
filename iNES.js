@@ -16,6 +16,11 @@ class ROM {
     this.rom_buffer = new ArrayBuffer;
   }
 
+  load_data(data) {
+    this.rom_buffer = data;
+    this.parse();
+  }
+
   load(filename) {
 
     var self = this;
