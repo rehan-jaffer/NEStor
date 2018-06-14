@@ -10,3 +10,7 @@ body {
   height: 600px;
   white-space: pre; 
 }
+
+#tiles {
+  font-family: Courier, monospace;  
+}
