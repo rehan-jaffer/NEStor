@@ -1,4 +1,4 @@
-var cpu = require('./CPU.js');
+var cpu = require('../CPU.js');
 const FLAGS_LIST = ["carry", "zero", "interrupt_disable", "decimal_mode", "break_command", "overflow", "negative"];
 
 describe("CPU initialization", () => {
@@ -78,3 +78,32 @@ describe("CPU status_byte() behaviour", () => {
 
 });
 
+describe("CPU next_byte() and next_bytes() helpers", () => {
+
+  let c = new cpu(false);
+  beforeEach(() => {
+    c.reset();
+    /* fill memory with range */
+    let cycle = [...Array(10).keys()];
+    c.direct_load(cycle);
+  });
+
+  it("returns the next_byte", () => {
+    expect(c.next_byte()).toEqual(1);
+  });
+
+  it("increments the program counter and returns the next byte accurately", () => {
+    c.registers.PC++;
+    expect(c.next_byte()).toEqual(2);
+  });
+
+  it("returns the next bytes", () => {
+    expect(c.next_bytes()).toEqual(513);
+  });
+
+  it("increments the program counter and returns the next bytes accurately", () => {
+    c.registers.PC++;
+    expect(c.next_bytes()).toEqual(770);
+  });
+
+});
