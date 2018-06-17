@@ -5,10 +5,10 @@ class Utility {
   }
 
   static split_byte(b1) {
-    let hex = b1.toString(16);
-    let b2 = parseInt(hex.slice(0,2), 16);
-    let b3 = parseInt(hex.slice(2,4), 16);
-    return [b2, b3];
+    let byte = parseInt(b1);
+    let first_byte = ((byte & 0xFF00) >> 8);
+    let second_byte = (byte & 0xFF);
+    return [first_byte, second_byte];
   }
 
   static bit(number, n) {

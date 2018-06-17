@@ -22,17 +22,17 @@ describe("utility.bit", () => {
 
 describe("utility.split_byte", () => {
   it("splits an arbitrary byte (0)", () => {
-    let byte = "e3a4";
+    let byte = 0xe3a4;
     expect(utility.split_byte(byte)).toEqual([0xe3, 0xa4]);
   });
 
   it("splits an arbitrary byte (1)", () => {
-    let byte = "a100";
+    let byte = 0xa100;
     expect(utility.split_byte(byte)).toEqual([0xa1, 0x00]);
   });
 
   it("splits an arbitrary byte (0)", () => {
-    let byte = "0102";
+    let byte = 0x0102;
     expect(utility.split_byte(byte)).toEqual([0x01, 0x02]);
   });
 });
