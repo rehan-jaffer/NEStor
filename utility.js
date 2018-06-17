@@ -12,7 +12,7 @@ class Utility {
   }
 
   static bit(number, n) {
-    return parseInt((("000000000" + number.toString(2)).substr(-8))[n]);
+    return ((number >> (n-1)) & 1);
   }
 
 }
