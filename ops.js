@@ -14,7 +14,7 @@ var operations = {
   JSR_ABS: function() {
     // push address of next operation onto the stack
     // then jump to subroutine location
-    let j = this.registers.PC + 3 - 1;
+    let j = (this.registers.PC+2);
     this.log("JSR " + j.toString(16), this.registers.PC);
     let bytes = utility.split_byte(j.toString(16));
     this.stack.push(bytes[0]);
@@ -227,14 +227,14 @@ var operations = {
     this.set(this.next_byte(), this.registers.A);
   },
   BIT: function() {
-    this.log("BIT #" + this.next_byte(), this.registers.PC);
-    let mem = this.next_byte();
-    let mem_bits = ("00000000" + this.next_byte().toString(2)).substr(-8);
+    this.log("BIT #" + this.fetch(this.next_byte()), this.registers.PC);
+    let mem = this.fetch(this.next_byte());
+    let mem_bits = ("00000000" + mem.toString(2)).substr(-8);
     let r = (this.registers.A & mem).toString(2);
     let s = ("00000000" + r).substr(-8);
     this.flags.zero = parseInt(r) == 0;
-    this.flags.negative = !mem_bits[0];
-    this.flags.overflow = !mem_bits[1];
+    this.flags.negative = !! + mem_bits[0];
+    this.flags.overflow = !! + mem_bits[1];
   },
   BVS: function() {
     let bvs_addr = this.registers.PC + 2 + this.next_byte();
@@ -275,7 +275,7 @@ var operations = {
   },
   RTS: function() {
     let ret_addr = utility.merge_bytes(this.stack.pop(), this.stack.pop());
-    this.registers.SP++;
+    this.registers.SP += 2;
     this.log("RTS " + ret_addr.toString(16), this.registers.PC);
     this.registers.PC = ret_addr;
   },
@@ -294,38 +294,39 @@ var operations = {
   },
   PHP: function() {
     this.log("PHP", this.registers.PC);
+    console.log(this.status_byte());
     this.stack.push(this.status_byte());
     this.registers.SP--;
   },
   PLA: function() {
+    this.log("PLA", this.registers.PC);
     let byte = this.stack.pop();
     this.registers.SP++;
-    this.log("PLA", this.registers.PC);
     this.registers.A = byte;
-    if (this.registers.A == 0) {
-      this.flags.zero = true;
-    }
-    if (utility.bit(byte, 7) == 1) {
+    this.flags.zero = (this.registers.A == 0);
+/*    if (utility.bit(byte, 1) == 1) {
       this.flags.negative = true;
-    }
+    } else {
+      this.flags.negative = false;
+    } */
   },
   AND_IMM: function() {
-    this.registers.A = this.registers.A & this.next_byte();
     this.log("AND #" + this.next_byte(), this.registers.PC);
+    this.registers.A = this.registers.A & this.next_byte();
   },
   AND_ZP: function() {
     this.registers.A = this.registers.A & this.fetch(this.next_byte());
     this.log("AND $" + this.next_byte(), this.registers.PC);
   },
   AND_ZP_X: function() {
+    this.log("AND $" + this.next_byte(), this.registers.PC);
     this.registers.A =
       this.registers.A & this.fetch(this.registers.X + this.next_byte());
-    this.log("AND $" + this.next_byte(), this.registers.PC);
   },
   AND_IND_X: function() {
+    this.log("AND (" + this.next_byte() + "), X", this.registers.PC);
     this.registers.A =
       this.registers.A & this.fetch(this.next_byte() + this.registers.X);
-    this.log("AND (" + this.next_byte() + "), X", this.registers.PC);
     this.cycles -= 6;
     if (this.registers.A == 0) {
       this.flags.zero = true;
@@ -341,21 +342,21 @@ var operations = {
   },
   ADC_IMM: function() {
     this.registers.A =
-      this.registers.A + this.next_byte() + this.flags.carry.toInteger();
+      this.registers.A + this.next_byte() + (+ this.flags.carry);
     this.log("ADC #" + this.next_byte(), this.registers.PC);
   },
   ADC_ZP: function() {
     this.registers.A =
       this.registers.A +
       this.fetch(this.next_byte()) +
-      this.flags.carry.toInteger();
+      (+ this.flags.carry);
     this.log("ADC #" + this.next_byte(), this.registers.PC);
   },
   ADC_IND_X: function() {
     this.registers.A =
       this.fetch(this.registers.X + this.next_byte()) +
       this.registers.A +
-      this.flags.carry.toInteger();
+      (+ this.flags.carry);
     this.log("ADC #" + this.next_byte(), this.registers.PC);
   },
   SBC_IMM: function() {
