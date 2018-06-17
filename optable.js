@@ -3,7 +3,7 @@ var opcodes = require('./ops.js');
 
 optable[0x20] = {
   cycles: 6,
-  bytes: 0,
+  bytes: 3,
   name: "JSR_ABS",
   actions: ['NO_UPDATE_PC'],
   op: opcodes["JSR_ABS"]
@@ -48,9 +48,9 @@ optable[0x60] = {
   bytes: 1,
   flags: [],
   name: 'RTS',
-  op: opcodes['RTS'],
-  actions: ['NO_UPDATE_PC']
+  op: opcodes['RTS']
 };
+//  actions: ['NO_UPDATE_PC']
 
 /* LDX opcodes */
 
