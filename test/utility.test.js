@@ -2,7 +2,7 @@ const utility = require('../utility.js');
 
 describe("utility.merge_bytes()", () => {
   it('merges two non-null bytes', () => {
-    expect(utility.merge_bytes(0xa0,0xa0)).toEqual(0xA0A0);
+    expect(utility.merge_bytes(0xa0,0xa1)).toEqual(0xA1A0);
   });
 
   it('merges two null bytes', () => {
