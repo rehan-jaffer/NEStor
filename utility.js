@@ -1,7 +1,8 @@
 class Utility {
 
   static merge_bytes(b1, b2) {
-    return parseInt(("00" + b2.toString(16)).substr(-2) + ("00" + b1.toString(16)).substr(-2), 16);
+//    return parseInt(("00" + b2.toString(16)).substr(-2) + ("00" + b1.toString(16)).substr(-2), 16);
+    return ((b2 << 8) + b1);
   }
 
   static split_byte(b1) {
@@ -12,7 +13,7 @@ class Utility {
   }
 
   static bit(number, n) {
-    return ((number >> (n-1)) & 1);
+    return ((number >> (n)) & 1);
   }
 
 }
