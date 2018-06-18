@@ -16,7 +16,7 @@ var operations = {
     // then jump to subroutine location
     let j = (this.registers.PC+2);
     this.log("JSR " + j.toString(16), this.registers.PC);
-    let bytes = utility.split_byte(j.toString(16));
+    let bytes = utility.split_byte(j);
     this.stack.push(bytes[0]);
     this.stack.push(bytes[1]);
     this.registers.SP -= 2;
@@ -194,6 +194,7 @@ var operations = {
   LDA_IMM: function() {
     this.log("LDA #$" + this.next_byte(), this.registers.PC);
     this.registers.A = this.next_byte();
+    console.log(utility.bit(this.registers.A, 7));
   },
   LDA_ZP: function() {
     this.log("LDA $" + this.next_byte(), this.registers.PC);
@@ -294,8 +295,8 @@ var operations = {
   },
   PHP: function() {
     this.log("PHP", this.registers.PC);
-    console.log(this.status_byte());
-    this.stack.push(this.status_byte());
+    let P = this.status_byte() + 0x10;
+    this.stack.push(P);
     this.registers.SP--;
   },
   PLA: function() {
@@ -311,20 +312,19 @@ var operations = {
     } */
   },
   AND_IMM: function() {
-    this.log("AND #" + this.next_byte(), this.registers.PC);
     this.registers.A = this.registers.A & this.next_byte();
+    this.log("AND #" + this.next_byte(), this.registers.PC);
   },
   AND_ZP: function() {
     this.registers.A = this.registers.A & this.fetch(this.next_byte());
     this.log("AND $" + this.next_byte(), this.registers.PC);
   },
   AND_ZP_X: function() {
-    this.log("AND $" + this.next_byte(), this.registers.PC);
     this.registers.A =
       this.registers.A & this.fetch(this.registers.X + this.next_byte());
+    this.log("AND $" + this.next_byte(), this.registers.PC);
   },
   AND_IND_X: function() {
-    this.log("AND (" + this.next_byte() + "), X", this.registers.PC);
     this.registers.A =
       this.registers.A & this.fetch(this.next_byte() + this.registers.X);
     this.cycles -= 6;
@@ -334,6 +334,7 @@ var operations = {
     if (utility.bit(this.registers.A, 7) == 1) {
       this.flags.negative = true;
     }
+    this.log("AND (" + this.next_byte() + "), X", this.registers.PC);
   },
   AND_IND_Y: function() {
     this.registers.A =
