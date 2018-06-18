@@ -82,7 +82,7 @@ class CPU {
       switch (flag) {
         case "UN":
           let t = ("00000000" + this.registers[operand].toString(2)).substr(-8);
-          if (utility.bit(t, 0) == 1) {
+          if (utility.bit(t, 7) == 1) {
             this.flags.negative = true;
           } else {
             this.flags.negative = false;
@@ -183,7 +183,8 @@ class CPU {
             " at " +
             this.registers.PC.toString(16)
         );
-        process.exit();
+        this.running = false;
+        continue;
       }
 
       optable[opcode].op.bind(this).call();
