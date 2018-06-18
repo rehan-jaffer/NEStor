@@ -373,9 +373,11 @@ var operations = {
     this.log("CMP #" + this.next_byte(), this.registers.PC);
     if (this.registers.A >= this.next_byte()) {
       this.flags.carry = true;
-    } else if (this.registers.A == this.flags.zero) {
+    }
+    if (this.registers.A == this.next_byte()) {
       this.flags.zero = true;
-    } else if (this.registers.A.toString(2)[7] == 1) {
+    } 
+    if (this.registers.A < this.next_byte()) {
       this.flags.negative = true;
     }
   },
