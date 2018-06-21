@@ -81,16 +81,19 @@ class CPU {
     flags.forEach(flag => {
       switch (flag) {
         case "UN":
-          let t = ("00000000" + this.registers[operand].toString(2)).substr(-8);
-          if (utility.bit(t, 7) == 1) {
+          if (utility.bit(this.registers[operand], 7) == 1) {
             this.flags.negative = true;
           } else {
             this.flags.negative = false;
           }
           break;
         case "UV":
-          this.flags.overflow = true;
-          break;
+          if (1==2) {
+            this.flags.overflow = true;
+          } else {
+            this.flags.overflow = false;
+          }
+            break;
         case "UZ":
           if (this.registers[operand] == 0) {
             this.flags.zero = true;
