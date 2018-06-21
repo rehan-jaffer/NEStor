@@ -169,14 +169,14 @@ var operations = {
     let pflags = this.stack.pop();
     this.cycles -= 4;
     this.registers.SP++;
-    let t = ("00000000" + pflags.toString(2)).substr(-8);
-    this.flags.carry = !t[0];
-    this.flags.zero = !t[1];
-    this.flags.interrupt_disable = !t[2];
-    this.flags.decimal_mode = !t[3];
+    let t = ("00000000" + pflags.toString(2)).substr(-8).split("").map((n) => parseInt(n));
+    this.flags.carry = !!t[0];
+    this.flags.zero = !!t[1];
+    this.flags.interrupt_disable = !!t[2];
+    this.flags.decimal_mode = !!t[3];
     this.flags.break_command = !t[4];
-    this.flags.overflow = !t[6];
-    this.flags.negative = !t[7];
+    this.flags.overflow = !!t[6];
+    this.flags.negative = !!t[7];
   },
   BCC: function() {
     let bcc_addr = this.registers.PC + 2 + this.next_byte();
@@ -234,8 +234,8 @@ var operations = {
     let r = (this.registers.A & mem).toString(2);
     let s = ("00000000" + r).substr(-8);
     this.flags.zero = parseInt(r) == 0;
-    this.flags.negative = !! + mem_bits[0];
-    this.flags.overflow = !! + mem_bits[1];
+    this.flags.negative = !! + parseInt(mem_bits[0]);
+    this.flags.overflow = !! + parseInt(mem_bits[1]);
   },
   BVS: function() {
     let bvs_addr = this.registers.PC + 2 + this.next_byte();
@@ -342,9 +342,11 @@ var operations = {
     this.log("AND (" + this.next_byte() + "), X", this.registers.PC);
   },
   ADC_IMM: function() {
-    this.registers.A =
+    let result =
       this.registers.A + this.next_byte() + (+ this.flags.carry);
     this.log("ADC #" + this.next_byte(), this.registers.PC);
+    this.flags.overflow = (!((this.registers.A ^ this.next_byte()) & 0x80) && ((this.next_byte() ^ result) & 0x80));
+    this.registers.A = result;
   },
   ADC_ZP: function() {
     this.registers.A =
