@@ -170,13 +170,15 @@ var operations = {
     this.cycles -= 4;
     this.registers.SP++;
     let t = ("00000000" + pflags.toString(2)).substr(-8).split("").map((n) => parseInt(n));
+    console.log(this.status_byte())
     this.flags.carry = !!t[0];
     this.flags.zero = !!t[1];
     this.flags.interrupt_disable = !!t[2];
     this.flags.decimal_mode = !!t[3];
-    this.flags.break_command = !t[4];
+    this.flags.break_command = !!t[4];
     this.flags.overflow = !!t[6];
     this.flags.negative = !!t[7];
+    console.log(this.status_byte())
   },
   BCC: function() {
     let bcc_addr = this.registers.PC + 2 + this.next_byte();
